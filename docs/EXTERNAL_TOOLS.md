@@ -1,21 +1,19 @@
 # External AI Tools
 
-Verified on 2026-09-10 before installation/configuration.
+Verified on 2026-09-10 during infrastructure validation.
 
 ## Codex CLI
 
 Official OpenAI documentation: https://learn.chatgpt.com/docs/codex/cli
 
-Detected: `codex-cli 0.152.1`.
+Detected: `codex-cli 0.154.0`.
 Authentication: present via ChatGPT.
 Install scope: per-user/global CLI.
 
 ## Claude Code
 
-Detected: `2.1.157 (Claude Code)`.
-Authentication status command reported present, but actual non-interactive use failed with `401 OAuth access token has been revoked`.
-
-Blocker: Yeriel must run `claude auth login` or the current Claude Code authentication repair flow, then verify with `claude -p "Say claude smoke ok"`.
+Detected: `2.1.267 (Claude Code)`.
+Authentication: `claude auth status` reported logged in through Claude first-party auth. A live `claude -p` cross-model test completed and wrote `docs/ai-runs/cross-model-test/01-claude-initial.md` and `03-claude-revision.md`.
 
 ## Claudex Loop
 
@@ -30,7 +28,7 @@ Installed skills:
 - `codex-build`
 - `codex-review`
 
-Prerequisites from README: both CLIs authenticated, Python 3.10+, Codex CLI current enough. Claude runtime is blocked until OAuth is repaired.
+Prerequisites from README: both CLIs authenticated, Python 3.10+, Codex CLI current enough. The direct Claude -> Codex -> Claude -> Codex workflow has been proven with small documentation-review artifacts under `docs/ai-runs/cross-model-test/`.
 
 ## Ponytail
 
@@ -47,7 +45,7 @@ Installed skills:
 - `ponytail-gain`
 - `ponytail-help`
 
-Purpose here: anti-bloat scope check before implementation. It must not remove security, accessibility, validation, backups, tests, error handling, or historical data integrity.
+Purpose here: anti-bloat scope check before implementation. It must not remove security, accessibility, validation, backups, tests, error handling, cross-model review for critical work, or historical data integrity.
 
 ## Graphify
 
@@ -58,14 +56,40 @@ Detected package: `graphifyy 0.6.0` installed in Python site-packages.
 Registered for Claude and Codex global skill directories via `graphify install` and `graphify install --platform codex`.
 Registered project guidance/hooks via `graphify codex install` and `graphify claude install`.
 
-Graph generation is not yet complete. CLI `graphify update docs` only rescans existing code graphs and reported no code files. Initial `/graphify .` should be run from a fresh assistant session after skills reload.
+Graph generation is complete for the current small repository. Outputs exist at `graphify-out/GRAPH_REPORT.md`, `graphify-out/graph.json`, and `graphify-out/graph.html`.
 
 ## OmniRoute
 
-Repository inspected: https://github.com/ourines/omniroute
-Package metadata in local clone: `omniroute 3.8.35`, Node engine `>=22.0.0 <23 || >=24.0.0 <27`.
-Current npm install attempted `npm install -g omniroute`; npm selected `omniroute 3.8.50`, emitted peer/deprecation warnings, then hung without completing. The partial global package was removed with `npm uninstall -g omniroute`.
+Repository from current npm metadata: `https://github.com/diegosouzapw/OmniRoute.git`.
+Current npm package: `omniroute 3.8.50`, Node engine `>=22.22.2 <23 || >=24.0.0 <27`.
+Local runtime: Node `v24.14.1`, npm `11.2.0`.
 
-Status: not installed, not configured, not trusted for routing.
+Previous failure: `npm install -g omniroute` selected `3.8.50`, emitted peer/deprecation warnings, and hung before completion. The likely hang surface is the package lifecycle path: the package has a large dependency tree and a `postinstall` script. Do not blindly repeat the global install.
 
-Policy: do not route M3 critical workflows through OmniRoute until it installs cleanly, starts cleanly, exposes logs, and proves no silent downgrade behavior.
+Current safe install: isolated per-user install completed with lifecycle scripts disabled:
+
+```powershell
+npm install --prefix C:\Users\yerie\.m3-tools\omniroute omniroute@3.8.50 --ignore-scripts
+```
+
+Verified commands:
+
+- `C:\Users\yerie\.m3-tools\omniroute\node_modules\.bin\omniroute.cmd --help`
+- `C:\Users\yerie\.m3-tools\omniroute\node_modules\.bin\omniroute.cmd --version` -> `3.8.50`
+- `C:\Users\yerie\.m3-tools\omniroute\node_modules\.bin\omniroute.cmd doctor --no-liveness`
+- `C:\Users\yerie\.m3-tools\omniroute\node_modules\.bin\omniroute.cmd serve --no-open --log --no-recovery`
+- `C:\Users\yerie\.m3-tools\omniroute\node_modules\.bin\omniroute.cmd status --output json`
+- `C:\Users\yerie\.m3-tools\omniroute\node_modules\.bin\omniroute.cmd simulate "cheap documentation cleanup" --explain`
+
+Observed results:
+
+- CLI responds.
+- Server starts and initializes a local data directory at `C:\Users\yerie\.omniroute`.
+- Doctor generated local secret material in `C:\Users\yerie\.omniroute\.env`; never print or commit it.
+- Server warned that the default bind is `0.0.0.0` with no API-key requirement. Future tests should bind loopback or require an API key before any provider credentials are configured.
+- Dry-run routing failed safely with `No matching combo found. Configure one with: omniroute combo create`.
+- Claude and Codex profiles were not modified.
+
+Status: CLI installed in an isolated per-user prefix and responding. Routing is not configured or trusted.
+
+Policy: do not route M3 critical workflows through OmniRoute until it is hardened to loopback/API-key mode, provider auth is explicitly configured, fallback behavior is tested, logs are reviewed, and no silent downgrade behavior is proven.

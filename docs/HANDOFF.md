@@ -3,6 +3,40 @@
 Date: 2026-09-10
 Owner: YERIEL AKA MOFUNDO
 Repository: `C:\Users\yerie\m3-memory`
+## Latest Session Update
+
+This session rehydrated from the repository and existing Graphify report, not prior conversation context. It then verified both CLIs, ran a live Claude -> Codex -> Claude -> Codex harmless workflow test, updated cost-aware routing policy, and installed OmniRoute in an isolated per-user prefix for smoke testing.
+
+New artifacts:
+
+- `docs/ai-runs/cross-model-test/claude-initial-prompt.md`
+- `docs/ai-runs/cross-model-test/01-claude-initial.md`
+- `docs/ai-runs/cross-model-test/codex-review-prompt.md`
+- `docs/ai-runs/cross-model-test/02-codex-adversarial-review.md`
+- `docs/ai-runs/cross-model-test/claude-revision-prompt.md`
+- `docs/ai-runs/cross-model-test/03-claude-revision.md`
+- `docs/ai-runs/cross-model-test/codex-final-prompt.md`
+- `docs/ai-runs/cross-model-test/04-codex-final-verification.md`
+
+Current verified CLI state:
+
+- Claude Code: `2.1.267 (Claude Code)`, authenticated, live `claude -p` completed.
+- Codex CLI: `codex-cli 0.154.0`, authenticated using ChatGPT, live `codex exec -s read-only` completed.
+- OmniRoute: isolated install at `C:\Users\yerie\.m3-tools\omniroute`, package `3.8.50`, CLI responds, server smoke test starts, routing not configured.
+
+Current policy update:
+
+- `docs/AI_SYSTEM.md` now uses Tier 0-3 cost-aware routing.
+- Substantial work must declare task tier, risk areas touched, required reviewer, Graphify checked, and Ponytail checked.
+- Tier 3 critical work still requires cross-model adversarial review and testing; do not weaken historical integrity, auth/security, validation, tests, or critical cross-model review to save usage.
+
+OmniRoute notes:
+
+- The previous global npm install likely hung in package lifecycle/dependency handling.
+- The safe path used here was `npm install --prefix C:\Users\yerie\.m3-tools\omniroute omniroute@3.8.50 --ignore-scripts`.
+- `doctor --no-liveness` generated local secret material under `C:\Users\yerie\.omniroute`; never print or commit it.
+- Server startup warned that default serving is on `0.0.0.0` without an API key. Do not configure providers or profiles until loopback/API-key hardening is explicit.
+- `simulate` failed safely because no routing combo exists.
 
 ## Current Project State
 
@@ -18,8 +52,8 @@ Fresh sessions should start by reading:
 
 ## Tools Successfully Installed Or Present
 
-- Codex CLI: `codex-cli 0.152.1`; `codex login status` previously reported logged in using ChatGPT.
-- Claude Code CLI: `2.1.157 (Claude Code)` is installed, but usable prompt auth is blocked; see Claude Code Status.
+- Codex CLI: `codex-cli 0.154.0`; `codex login status` reported logged in using ChatGPT; live `codex exec -s read-only` completed in the cross-model test.
+- Claude Code CLI: `2.1.267 (Claude Code)` is installed, authenticated, and live `claude -p` completed in the cross-model test.
 - Graphify: Python package `graphifyy 0.6.0` installed; `graphify` executable present. The CLI does not support `graphify --version`, so version was read from Python package metadata.
 - Claudex Loop skills: installed/copied into global and project skill directories.
 - Ponytail skills: installed/copied into global and project skill directories. Maintained source package version verified from cloned source as `@dietrichgebert/ponytail 4.9.0`.
@@ -27,13 +61,13 @@ Fresh sessions should start by reading:
 
 ## Tools Configured But Not Yet Proven
 
-- Claudex Loop is installed as skill files and was discoverable by Codex in a harmless skill-discovery run, but full Claude <-> Codex workflow is not proven because Claude prompt auth failed.
-- Ponytail is installed as skill files and documented for scope/anti-bloat review, but no full pre-implementation enforcement workflow has been run on a real feature yet.
+- Claudex Loop skills are installed, and a direct Claude -> Codex -> Claude -> Codex harmless workflow was proven under `docs/ai-runs/cross-model-test/`.
+- Ponytail is installed as skill files and was invoked as the anti-bloat lens in the cross-model workflow test. It still must be used before implementation work that could add architecture, dependencies, or broad abstractions.
 - Graphify hooks were created in `.codex/hooks.json` and `.claude/settings.json`. They remind agents to read `graphify-out/GRAPH_REPORT.md` before broad repository searches. The hooks are configuration files; behavior inside each host should be treated as configured but not fully proven.
 
 ## Failed Installations
 
-- OmniRoute was investigated from `https://github.com/ourines/omniroute`. Local cloned source showed package version `3.8.35`, current npm install attempted `omniroute@3.8.50`, and docs require Node engine compatible with the installed Node 24 line. The global npm install hung, was interrupted, and the broken global npm entry was removed with `npm uninstall -g omniroute`. `omniroute` is not on PATH.
+- OmniRoute global install previously hung and was removed. Current npm metadata points to `omniroute 3.8.50` from `https://github.com/diegosouzapw/OmniRoute.git`; isolated install at `C:\Users\yerie\.m3-tools\omniroute` completed with `--ignore-scripts`, and the CLI/server smoke test responds. It is not on PATH and not configured for routing.
 - GitHub CLI `gh` is missing.
 - `pnpm` is missing.
 - `pipx` is missing.
@@ -88,15 +122,15 @@ Ponytail purpose in this project: anti-bloat, scope challenge, and unnecessary-c
 
 ## OmniRoute Status
 
-OmniRoute is not installed and must not be retried automatically in this checkpoint session. Treat subscription-authenticated Claude/Codex and API-billed providers as separate until OmniRoute docs prove otherwise. Do not route critical M3 work through OmniRoute until direct Claude <-> Codex cross-review is proven first.
+OmniRoute is installed only in an isolated per-user prefix: `C:\Users\yerie\.m3-tools\omniroute`. Treat subscription-authenticated Claude/Codex and API-billed providers as separate until OmniRoute provider/auth docs and local tests prove otherwise. Do not route critical M3 work through OmniRoute until loopback/API-key hardening, providers, fallback behavior, failure behavior, and logs are verified.
 
 ## Claude Code Status
 
-Claude Code CLI is installed: `2.1.157 (Claude Code)`. A previous `claude auth status` style check appeared present, but actual prompt execution failed with `401 OAuth access token has been revoked`. Do not spend more context debugging this in a fresh work session unless Yeriel explicitly wants auth repair. Required user-side next step is to refresh Claude authentication from Claude Code.
+Claude Code CLI is installed: `2.1.267 (Claude Code)`. `claude auth status` reported authenticated and live `claude -p` completed. Do not print account identifiers or authentication details.
 
 ## Codex Status
 
-Codex CLI is installed: `codex-cli 0.152.1`. Authentication previously reported as present using ChatGPT. Codex was able to run a harmless skill-discovery task and write `docs/ai-runs/codex-skill-discovery.txt`.
+Codex CLI is installed: `codex-cli 0.154.0`. Authentication reported present using ChatGPT. Codex completed live read-only adversarial review and final verification artifacts under `docs/ai-runs/cross-model-test/`.
 
 ## M3-Specific Skills Created
 
@@ -145,16 +179,16 @@ These enforce source-memory immutability, contributor/Yeriel/AI/evidence separat
 
 - Windows sandbox process spawning failed repeatedly with `SetTokenInformation(TokenDefaultDacl) failed: 1344`; scoped PowerShell commands were run with approval outside the sandbox.
 - `apply_patch` failed for the same sandbox reason, so scoped PowerShell file writes were used.
-- Claude prompt execution failed with `401 OAuth access token has been revoked`.
-- OmniRoute global install hung and was removed; command is unavailable.
+- Historical: Claude prompt execution previously failed with `401 OAuth access token has been revoked`; superseded by this session's successful `claude -p` runs.
+- OmniRoute global install hung and was removed; isolated command is available at `C:\Users\yerie\.m3-tools\omniroute\node_modules\.bin\omniroute.cmd`.
 - Graphify CLI has no `--version` command.
 - `.codex/hooks.json` and `.claude/settings.json` contain Graphify hook commands, but hook runtime behavior has not been proven in both hosts.
 
 ## Remaining Blockers
 
-- Refresh Claude Code authentication before running full Claude <-> Codex cross-review.
+- Full direct Claude <-> Codex cross-review is now proven for a harmless documentation workflow.
 - Decide later whether to install `gh`, `pnpm`, or `pipx`; they are not required for this checkpoint.
-- Revisit OmniRoute only after direct Claude <-> Codex workflow is proven.
+- Revisit OmniRoute configuration only after loopback/API-key hardening and explicit provider/auth setup.
 
 ## Exact Next Commands Recommended
 
@@ -184,7 +218,7 @@ Then run the harmless cross-model README workflow described in `docs/AI_SYSTEM.m
 
 - Do not reinstall Claudex Loop skills unless files are missing.
 - Do not reinstall Ponytail skills unless files are missing.
-- Do not retry OmniRoute in the next immediate session.
+- Do not retry global OmniRoute install. Use the isolated per-user prefix if further OmniRoute testing is needed.
 - Do not debug Claude authentication unless Yeriel explicitly asks for auth repair.
 - Do not import historical/personal data into production or development.
 - Do not commit `node_modules/`, `.next/`, `.m3-memory/`, `tools/vendor/`, Graphify cache files, Graphify cost files, Graphify runtime marker files, or root Graphify extraction intermediates.
@@ -192,5 +226,10 @@ Then run the harmless cross-model README workflow described in `docs/AI_SYSTEM.m
 ## Next Three Priorities
 
 1. Confirm this checkpoint commit exists and the working tree has only expected ignored local artifacts.
-2. Refresh Claude Code authentication, then run the direct Claude <-> Codex harmless cross-review test.
-3. Only after cross-review works, begin M3 Memory V0.1 planning from `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, and `docs/HISTORICAL_INTEGRITY.md`.
+2. Harden OmniRoute to loopback/API-key mode before configuring any provider or profile.
+3. Begin M3 Memory V0.1 planning from `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, and `docs/HISTORICAL_INTEGRITY.md` using the Tier 0-3 policy.
+
+
+
+
+
