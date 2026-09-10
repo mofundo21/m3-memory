@@ -6,6 +6,15 @@ export type SubmissionStatus =
   | "REJECTED"
   | "ARCHIVED";
 
+export const submissionStatuses = [
+  "UNREVIEWED",
+  "IN_REVIEW",
+  "REVIEWED",
+  "APPROVED_FOR_STORY",
+  "REJECTED",
+  "ARCHIVED"
+] as const satisfies readonly SubmissionStatus[];
+
 export type SubmissionInput = {
   submitterName: string;
   contact?: string;

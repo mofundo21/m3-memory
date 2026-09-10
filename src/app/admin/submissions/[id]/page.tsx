@@ -1,22 +1,15 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { isAdminAuthenticated } from "@/lib/auth";
+import { isAdminAuthenticated, requireAdmin } from "@/lib/auth";
 import { getSubmission, upsertReview } from "@/lib/db";
-import type { ReviewInput, SubmissionStatus } from "@/lib/types";
-
-const statuses: SubmissionStatus[] = [
-  "UNREVIEWED",
-  "IN_REVIEW",
-  "REVIEWED",
-  "APPROVED_FOR_STORY",
-  "REJECTED",
-  "ARCHIVED"
-];
+import { submissionStatuses, type ReviewInput, type SubmissionStatus } from "@/lib/types";
 
 async function saveReview(id: string, formData: FormData) {
   "use server";
+  await requireAdmin();
+
   const input: ReviewInput = {
     status: String(formData.get("status") || "UNREVIEWED") as SubmissionStatus,
     notes: String(formData.get("notes") || ""),
@@ -33,8 +26,18 @@ async function saveReview(id: string, formData: FormData) {
     chapterCategory: String(formData.get("chapterCategory") || ""),
     privateNotes: String(formData.get("privateNotes") || "")
   };
+
   upsertReview(id, input);
   redirect(`/admin/submissions/${id}`);
+}
+
+function OriginalField({ label, value }: { label: string; value: unknown }) {
+  return (
+    <div className="original-field">
+      <strong>{label}</strong>
+      <p className="muted">{String(value || "-")}</p>
+    </div>
+  );
 }
 
 export default async function SubmissionDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -46,33 +49,50 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
   const review = submission.review || {};
 
   return (
-    <main className="shell">
+    <main className="shell admin-shell">
       <header className="topbar">
         <div className="brand">
-          <strong>Submission Detail</strong>
+          <strong>Submission detail</strong>
           <span>{submission.id}</span>
         </div>
-        <Link className="btn" href="/admin">Back to inbox</Link>
+        <Link className="btn" href="/admin/submissions">Back to inbox</Link>
       </header>
 
       <div className="split">
         <section className="panel stack">
-          <h2>Original Submission</h2>
-          <p className="notice">Preserved exactly as submitted. Do not edit this layer.</p>
-          {Object.entries(original).map(([key, value]) => (
-            <div key={key}>
-              <strong>{key}</strong>
-              <p className="muted">{String(value || "-")}</p>
-            </div>
-          ))}
+          <div>
+            <h2>Contributor Original</h2>
+            <p className="notice">Immutable source layer. Review notes and corrections belong on the right.</p>
+          </div>
+          <OriginalField label="Name" value={original.submitterName} />
+          <OriginalField label="Contact" value={original.contact} />
+          <OriginalField label="Date" value={original.encounterDate} />
+          <OriginalField label="Approximate" value={original.isApproximateDate ? "Yes" : "No"} />
+          <OriginalField label="Event" value={original.eventName} />
+          <OriginalField label="Location" value={original.locationName} />
+          <OriginalField label="City / region / country" value={[original.city, original.region, original.country].filter(Boolean).join(", ")} />
+          <OriginalField label="How they met" value={original.howMet} />
+          <OriginalField label="Memory" value={original.memoryText} />
+          <OriginalField label="Before" value={original.beforeText} />
+          <OriginalField label="After" value={original.afterText} />
+          <OriginalField label="Repeat encounters" value={original.metAgain} />
+          <OriginalField label="Other people" value={original.peoplePresent} />
+          <OriginalField label="Yeriel / MOFUNDO wearing" value={original.yerielWearing} />
+          <OriginalField label="Contributor wearing" value={original.submitterWearing} />
+          <OriginalField label="Conversation" value={original.talkedAbout} />
+          <OriginalField label="Exchanged" value={original.exchanged} />
+          <OriginalField label="Artifacts" value={original.artifactInfo} />
+          <OriginalField label="What Yeriel may not remember" value={original.forgottenPrompt} />
+          <OriginalField label="Book page prompt" value={original.bookPagePrompt} />
+          <OriginalField label="Additional comments" value={original.additionalComments} />
         </section>
 
         <form action={saveReview.bind(null, id)} className="panel grid">
-          <h2>Yeriel's Review</h2>
+          <h2>Yeriel Review</h2>
           <div className="field">
             <label>Status</label>
             <select name="status" defaultValue={submission.status}>
-              {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+              {submissionStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
             </select>
           </div>
           <div className="field"><label>My notes</label><textarea name="notes" defaultValue={review.notes || ""} /></div>
@@ -85,7 +105,7 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
             <div className="field"><label>Importance</label><input name="importance" type="number" min="1" max="5" defaultValue={review.importance || ""} /></div>
             <div className="field"><label>Emotional significance</label><input name="emotionalSignificance" type="number" min="1" max="5" defaultValue={review.emotional_significance || ""} /></div>
             <div className="field"><label>Historical significance</label><input name="historicalSignificance" type="number" min="1" max="5" defaultValue={review.historical_significance || ""} /></div>
-            <div className="field"><label>Accuracy / confidence</label><input name="accuracyConfidence" type="number" min="1" max="5" defaultValue={review.accuracy_confidence || ""} /></div>
+            <div className="field"><label>Accuracy confidence</label><input name="accuracyConfidence" type="number" min="1" max="5" defaultValue={review.accuracy_confidence || ""} /></div>
             <div className="field"><label>Book potential</label><input name="bookPotential" type="number" min="1" max="5" defaultValue={review.book_potential || ""} /></div>
             <div className="field"><label>Chapter / category</label><input name="chapterCategory" defaultValue={review.chapter_category || ""} /></div>
           </div>
@@ -94,10 +114,9 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
             <button className="btn primary" type="submit">Save review</button>
             <button className="btn" type="button" disabled>Create story</button>
           </div>
-          <p className="muted">Story generation is intentionally disabled until reviewed material and writing rules are ready.</p>
+          <p className="muted">Story generation is disabled until reviewed material and writing rules are ready.</p>
         </form>
       </div>
     </main>
   );
 }
-

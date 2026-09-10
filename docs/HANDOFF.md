@@ -3,6 +3,60 @@
 Date: 2026-09-10
 Owner: YERIEL AKA MOFUNDO
 Repository: `C:\Users\yerie\m3-memory`
+
+## Latest Session Update
+
+M3 Memory V0.1 implementation reached a tested local milestone.
+
+Task classification:
+
+- Public routes and mobile UI: Tier 1.
+- Submission persistence, admin auth, private review workflow, contributor privacy, and historical-source separation: Tier 3.
+- Graphify checked before code changes and updated after code changes.
+- Ponytail checked: kept the existing Next.js + local SQLite scaffold, added no dependencies, postponed uploads/Supabase until production credentials and storage policy exist.
+- Second-model review completed with Claude Code for Tier 3 auth/privacy/historical-integrity concerns. Logs are under `docs/ai-runs/v01-memory-build/`.
+
+Implemented:
+
+- `/` now introduces M3 Memory with a prominent Share a Memory action.
+- `/remember` is the mobile-first public memory submission route.
+- `/thanks` confirms submission without exposing IDs or contributor data.
+- Legacy `/submit` and `/submit/thanks` redirect to the new public routes.
+- `/admin` redirects to `/admin/submissions`.
+- `/admin/submissions` is a protected private inbox.
+- `/admin/submissions/[id]` shows contributor original read-only beside a separate Yeriel review form.
+- Review server action now calls `requireAdmin()` before writing.
+- Admin auth no longer permits default password/session secret fallback in production.
+- Admin session cookie uses `sameSite: "strict"`, `httpOnly`, and `secure` in production.
+- Submission/status inputs are validated at the local SQLite persistence boundary.
+- TypeScript scope now excludes vendored tool directories so app checks do not compile OmniRoute source.
+
+Validation performed with fictional data only:
+
+- `npm run typecheck` passed.
+- `npm run build` passed.
+- Local dev server verified at `http://localhost:3100` with `DATABASE_PATH=.m3-memory/v01-test.sqlite`, `ADMIN_PASSWORD=v01-local-test-password`, and `SESSION_SECRET=v01-local-test-session-secret`.
+- Rendered `/remember` server-action form submitted a fictional memory and redirected `303 -> /thanks`.
+- Temp SQLite DB confirmed the original contributor JSON was persisted with status `UNREVIEWED` and no review row before review.
+- Unauthenticated `/admin/submissions` and direct `/admin/submissions/[id]` access redirected `307 -> /admin/login`.
+- Admin login through rendered form redirected `303 -> /admin/submissions`.
+- Admin review save through rendered bound server action redirected `303 -> /admin/submissions/[id]`.
+- Temp SQLite DB confirmed status changed to `IN_REVIEW`, review fields were saved separately, and original contributor memory remained unchanged.
+- `/thanks` returned 200 and exposed no submission data.
+- `graphify update .` completed and updated `graphify-out/GRAPH_REPORT.md`, `graphify-out/graph.json`, and `graphify-out/graph.html`.
+
+Claude review result:
+
+- First pass blocked only because new route files were untracked and invisible to `git diff`.
+- After `git add -N` exposed new route contents, Claude reported no blocking Tier 3 findings.
+- Low-severity recommendation to use `sameSite: "strict"` was applied.
+
+Current limitations / production blockers:
+
+- Production database is still local SQLite by default. Before public launch, deliberately select/configure production storage, likely Supabase/PostgreSQL with database-level authorization/RLS.
+- Uploads remain intentionally postponed until private storage, file validation, request size limits, and retrieval rules are designed and reviewed.
+- No login or submission rate limiting yet.
+- No real credentials were invented or committed. Set `ADMIN_PASSWORD` and `SESSION_SECRET` in any production-like environment.
 ## Latest Session Update
 
 This session rehydrated from the repository and existing Graphify report, not prior conversation context. It then verified both CLIs, ran a live Claude -> Codex -> Claude -> Codex harmless workflow test, updated cost-aware routing policy, and installed OmniRoute in an isolated per-user prefix for smoke testing.
@@ -228,6 +282,7 @@ Then run the harmless cross-model README workflow described in `docs/AI_SYSTEM.m
 1. Confirm this checkpoint commit exists and the working tree has only expected ignored local artifacts.
 2. Harden OmniRoute to loopback/API-key mode before configuring any provider or profile.
 3. Begin M3 Memory V0.1 planning from `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, and `docs/HISTORICAL_INTEGRITY.md` using the Tier 0-3 policy.
+
 
 
 

@@ -20,3 +20,4 @@ tools/vendor/**/coverage/
 tools/vendor/
 graphify-out/.graphify_python
 .graphify_*.json
+graphify-out/.graphify_root

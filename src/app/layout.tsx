@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "M3 Memory",
-  description: "Private memory archive and review system"
+  description: "Private memory archive for Yeriel / MOFUNDO"
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

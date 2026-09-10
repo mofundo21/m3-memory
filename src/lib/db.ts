@@ -3,7 +3,7 @@ import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
-import type { ReviewInput, SubmissionInput } from "./types";
+import { submissionStatuses, type ReviewInput, type SubmissionInput, type SubmissionStatus } from "./types";
 
 let db: DatabaseSync | null = null;
 
@@ -100,17 +100,69 @@ function now() {
   return new Date().toISOString();
 }
 
+function text(value: string | undefined, max = 4000) {
+  return (value || "").trim().slice(0, max);
+}
+
+function optionalText(value: string | undefined, max = 4000) {
+  const cleaned = text(value, max);
+  return cleaned || null;
+}
+
+function rating(value: number | undefined): number | null {
+  const n = value ?? 0;
+  return Number.isInteger(n) && n >= 1 && n <= 5 ? n : null;
+}
+
+function requireStatus(status: SubmissionStatus) {
+  if (!submissionStatuses.includes(status)) {
+    throw new Error("INVALID_STATUS");
+  }
+}
+
 export function createSubmission(input: SubmissionInput) {
   const db = getDb();
   const createdAt = now();
   const personId = randomUUID();
   const submissionId = randomUUID();
-  const memoryPreview = input.memoryText.trim().slice(0, 220);
+  const submitterName = text(input.submitterName, 160);
+  const memoryText = text(input.memoryText, 12000);
+
+  if (!submitterName || !memoryText) {
+    throw new Error("INVALID_SUBMISSION");
+  }
+
+  const original: SubmissionInput = {
+    submitterName,
+    contact: text(input.contact, 240),
+    encounterDate: text(input.encounterDate, 40),
+    isApproximateDate: Boolean(input.isApproximateDate),
+    locationName: text(input.locationName, 240),
+    city: text(input.city, 120),
+    region: text(input.region, 120),
+    country: text(input.country, 120),
+    eventName: text(input.eventName, 240),
+    howMet: text(input.howMet, 4000),
+    memoryText,
+    beforeText: text(input.beforeText, 4000),
+    afterText: text(input.afterText, 4000),
+    metAgain: text(input.metAgain, 4000),
+    peoplePresent: text(input.peoplePresent, 4000),
+    yerielWearing: text(input.yerielWearing, 2000),
+    submitterWearing: text(input.submitterWearing, 2000),
+    talkedAbout: text(input.talkedAbout, 4000),
+    exchanged: text(input.exchanged, 2000),
+    artifactInfo: text(input.artifactInfo, 4000),
+    forgottenPrompt: text(input.forgottenPrompt, 4000),
+    bookPagePrompt: text(input.bookPagePrompt, 4000),
+    additionalComments: text(input.additionalComments, 4000)
+  };
+  const memoryPreview = memoryText.slice(0, 220);
 
   db.prepare("INSERT INTO persons (id, display_name, contact, created_at) VALUES (?, ?, ?, ?)").run(
     personId,
-    input.submitterName.trim(),
-    input.contact?.trim() || null,
+    submitterName,
+    optionalText(original.contact, 240),
     createdAt
   );
 
@@ -123,15 +175,15 @@ export function createSubmission(input: SubmissionInput) {
   `).run(
     submissionId,
     personId,
-    JSON.stringify(input),
+    JSON.stringify(original),
     memoryPreview,
-    input.encounterDate || null,
-    input.isApproximateDate ? 1 : 0,
-    input.locationName || null,
-    input.city || null,
-    input.region || null,
-    input.country || null,
-    input.eventName || null,
+    optionalText(original.encounterDate, 40),
+    original.isApproximateDate ? 1 : 0,
+    optionalText(original.locationName, 240),
+    optionalText(original.city, 120),
+    optionalText(original.region, 120),
+    optionalText(original.country, 120),
+    optionalText(original.eventName, 240),
     createdAt,
     createdAt
   );
@@ -183,6 +235,7 @@ export function getSubmission(id: string) {
 }
 
 export function upsertReview(submissionId: string, input: ReviewInput) {
+  requireStatus(input.status);
   const db = getDb();
   const existing = db.prepare("SELECT id FROM reviews WHERE submission_id = ?").get(submissionId) as any;
   const updatedAt = now();
@@ -197,19 +250,19 @@ export function upsertReview(submissionId: string, input: ReviewInput) {
         updated_at = ?
       WHERE submission_id = ?
     `).run(
-      input.notes || null,
-      input.remembered || null,
-      input.corrections || null,
-      input.context || null,
-      input.people || null,
-      input.tags || null,
-      input.importance || null,
-      input.emotionalSignificance || null,
-      input.historicalSignificance || null,
-      input.accuracyConfidence || null,
-      input.bookPotential || null,
-      input.chapterCategory || null,
-      input.privateNotes || null,
+      optionalText(input.notes),
+      optionalText(input.remembered),
+      optionalText(input.corrections),
+      optionalText(input.context),
+      optionalText(input.people, 1000),
+      optionalText(input.tags, 1000),
+      rating(input.importance),
+      rating(input.emotionalSignificance),
+      rating(input.historicalSignificance),
+      rating(input.accuracyConfidence),
+      rating(input.bookPotential),
+      optionalText(input.chapterCategory, 240),
+      optionalText(input.privateNotes),
       updatedAt,
       submissionId
     );
@@ -223,19 +276,19 @@ export function upsertReview(submissionId: string, input: ReviewInput) {
     `).run(
       reviewId,
       submissionId,
-      input.notes || null,
-      input.remembered || null,
-      input.corrections || null,
-      input.context || null,
-      input.people || null,
-      input.tags || null,
-      input.importance || null,
-      input.emotionalSignificance || null,
-      input.historicalSignificance || null,
-      input.accuracyConfidence || null,
-      input.bookPotential || null,
-      input.chapterCategory || null,
-      input.privateNotes || null,
+      optionalText(input.notes),
+      optionalText(input.remembered),
+      optionalText(input.corrections),
+      optionalText(input.context),
+      optionalText(input.people, 1000),
+      optionalText(input.tags, 1000),
+      rating(input.importance),
+      rating(input.emotionalSignificance),
+      rating(input.historicalSignificance),
+      rating(input.accuracyConfidence),
+      rating(input.bookPotential),
+      optionalText(input.chapterCategory, 240),
+      optionalText(input.privateNotes),
       updatedAt,
       updatedAt
     );
