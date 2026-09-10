@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "node scripts/lint.mjs",
+    "test": "npm run build && node scripts/v01-smoke-test.mjs"
   },
   "dependencies": {
     "next": "^16.3.4",

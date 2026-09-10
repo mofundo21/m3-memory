@@ -6,6 +6,63 @@ Repository: `C:\Users\yerie\m3-memory`
 
 ## Latest Session Update
 
+M3 Memory V0.1 is now a repeatably testable local product milestone.
+
+Task classification:
+
+- Public UX polish and npm scripts: Tier 1.
+- End-to-end public/admin workflow testing: Tier 2.
+- Supabase candidate schema, RLS posture, auth/session changes, admin-only reads, review writes, and source immutability: Tier 3.
+- Ponytail checked: no new npm dependencies; tests use Node stdlib, Next, and local SQLite already present.
+- Graphify checked before targeted reads and updated after code/doc changes.
+- Claude Code reviewed Tier 3 changes under `docs/ai-runs/v01-testable-product/`; no blocking findings.
+
+Implemented in this continuation:
+
+- Added `npm run lint` with a no-dependency guard against forbidden old-project references in app/setup/scripts.
+- Added `npm test`, which runs `npm run build` and then a production-mode V0.1 smoke test against `next start`.
+- Added `scripts/v01-smoke-test.mjs`, using fictional data only and a unique ignored SQLite DB per run.
+- Improved `/remember` with visible validation error messaging, progress affordance, and pending submit text.
+- Improved `/admin/submissions` with contributor label, status, created time, approximate date, event/location, and memory preview.
+- Added admin sign-out UI on the inbox.
+- Reduced admin session max age from 12 hours to 2 hours.
+- Added Supabase candidate schema at `supabase/schema.sql` with RLS enabled and default-deny grants.
+- Added Supabase setup instructions at `docs/setup/SUPABASE.md`.
+- Updated `.env.example` with Supabase placeholders but did not wire or invent credentials.
+- Updated `docs/ARCHITECTURE.md` and `docs/DECISIONS.md` to reflect tested local SQLite V0.1 and deferred Supabase production integration.
+
+Current repeatable validation:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed. It builds production output, starts `next start`, submits fictional memories through rendered server-action forms, verifies public/admin access boundaries, saves and updates a review, and checks source immutability.
+- `npm run build` passed after the smoke test.
+- `graphify update .` completed and updated `graphify-out/GRAPH_REPORT.md`, `graphify-out/graph.json`, and `graphify-out/graph.html`.
+
+Smoke test coverage includes:
+
+- valid public submission
+- optional fields omitted
+- validation failure
+- long memory text capped at persistence boundary
+- public inability to list submissions
+- public inability to read arbitrary submission detail
+- unauthorized admin redirect
+- authorized admin login and inbox access
+- review creation/update
+- status update
+- original source JSON unchanged after review create/update
+- `/thanks` does not leak submission ID or contributor name
+- production build as part of `npm test`
+
+External blockers before production launch:
+
+- Supabase is not configured or wired. Required values: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and an admin identity decision.
+- RLS policy implementation still needs Tier 3 review after the admin identity model is chosen.
+- Media uploads remain deferred until private storage, file validation, request size limits, and retrieval rules are designed and reviewed.
+- Submission/admin rate limiting remains a future hardening item.
+## Latest Session Update
+
 M3 Memory V0.1 implementation reached a tested local milestone.
 
 Task classification:
@@ -282,6 +339,7 @@ Then run the harmless cross-model README workflow described in `docs/AI_SYSTEM.m
 1. Confirm this checkpoint commit exists and the working tree has only expected ignored local artifacts.
 2. Harden OmniRoute to loopback/API-key mode before configuring any provider or profile.
 3. Begin M3 Memory V0.1 planning from `docs/PRODUCT.md`, `docs/ARCHITECTURE.md`, and `docs/HISTORICAL_INTEGRITY.md` using the Tier 0-3 policy.
+
 
 
 

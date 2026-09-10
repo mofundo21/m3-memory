@@ -363,3 +363,66 @@ select {
     font-size: 44px;
   }
 }
+
+.progress-line {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #0e0f12;
+}
+
+.progress-line span {
+  display: block;
+  width: 34%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--gold));
+}
+
+.error-note {
+  margin: 0;
+  border: 1px solid rgba(255, 79, 145, 0.45);
+  border-radius: 7px;
+  padding: 10px 12px;
+  color: #ffd4e4;
+  background: rgba(255, 79, 145, 0.09);
+}
+
+.prompt-group {
+  display: grid;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.main-memory-field textarea {
+  min-height: 180px;
+}
+
+.primary-action:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.rich-row {
+  grid-template-columns: 150px 1fr 190px;
+}
+
+.row-main {
+  display: grid;
+  gap: 5px;
+}
+
+.row-meta {
+  color: var(--gold);
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .rich-row {
+    grid-template-columns: 1fr;
+  }
+
+  .primary-action,
+  .btn {
+    min-height: 46px;
+  }
+}

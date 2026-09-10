@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 import { createSubmission } from "@/lib/db";
 import type { SubmissionInput } from "@/lib/types";
+import { SubmitMemoryButton } from "./SubmitMemoryButton";
 
 async function submitMemory(formData: FormData) {
   "use server";
@@ -41,7 +42,10 @@ async function submitMemory(formData: FormData) {
   redirect("/thanks");
 }
 
-export default function RememberPage() {
+export default async function RememberPage({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
+  const params = await searchParams;
+  const hasError = params?.error === "missing";
+
   return (
     <main className="memory-shell">
       <header className="memory-header">
@@ -58,6 +62,9 @@ export default function RememberPage() {
           </p>
         </div>
 
+        <div className="progress-line"><span /></div>
+        {hasError ? <p className="error-note">Please add your name and the memory before sending.</p> : null}
+
         <div className="field">
           <label>Your name</label>
           <input name="submitterName" required autoComplete="name" placeholder="What should I call you?" maxLength={160} />
@@ -67,7 +74,7 @@ export default function RememberPage() {
           <input name="contact" autoComplete="email" placeholder="@name, email, phone, anything useful" maxLength={240} />
         </div>
 
-        <div className="field">
+        <div className="field main-memory-field">
           <label>What do you remember?</label>
           <textarea name="memoryText" required placeholder="Where were we? What happened? What did it feel like?" maxLength={12000} />
         </div>
@@ -97,22 +104,25 @@ export default function RememberPage() {
           <input name="country" placeholder="Country" maxLength={120} />
         </div>
 
-        <div className="field"><label>How did we meet?</label><textarea name="howMet" maxLength={4000} /></div>
-        <div className="field"><label>What happened before?</label><textarea name="beforeText" maxLength={4000} /></div>
-        <div className="field"><label>What happened afterward?</label><textarea name="afterText" maxLength={4000} /></div>
-        <div className="field"><label>Did we meet again?</label><textarea name="metAgain" maxLength={4000} /></div>
-        <div className="field"><label>Who else was there?</label><textarea name="peoplePresent" maxLength={4000} /></div>
-        <div className="field"><label>What was Yeriel / MOFUNDO wearing?</label><textarea name="yerielWearing" maxLength={2000} /></div>
-        <div className="field"><label>What were you wearing?</label><textarea name="submitterWearing" maxLength={2000} /></div>
-        <div className="field"><label>Clothing, objects, tickets, merch, keepsakes</label><textarea name="artifactInfo" maxLength={4000} /></div>
-        <div className="field"><label>What did we talk about?</label><textarea name="talkedAbout" maxLength={4000} /></div>
-        <div className="field"><label>Was anything exchanged?</label><textarea name="exchanged" maxLength={2000} /></div>
-        <div className="field"><label>What do you think I do not remember about that day?</label><textarea name="forgottenPrompt" maxLength={4000} /></div>
-        <div className="field"><label>If this moment were a page in a book, what should it say?</label><textarea name="bookPagePrompt" maxLength={4000} /></div>
-        <div className="field"><label>Anything else?</label><textarea name="additionalComments" maxLength={4000} /></div>
+        <div className="prompt-group">
+          <p className="kicker">Optional details</p>
+          <div className="field"><label>How did we meet?</label><textarea name="howMet" maxLength={4000} /></div>
+          <div className="field"><label>What happened before?</label><textarea name="beforeText" maxLength={4000} /></div>
+          <div className="field"><label>What happened afterward?</label><textarea name="afterText" maxLength={4000} /></div>
+          <div className="field"><label>Did we meet again?</label><textarea name="metAgain" maxLength={4000} /></div>
+          <div className="field"><label>Who else was there?</label><textarea name="peoplePresent" maxLength={4000} /></div>
+          <div className="field"><label>What was Yeriel / MOFUNDO wearing?</label><textarea name="yerielWearing" maxLength={2000} /></div>
+          <div className="field"><label>What were you wearing?</label><textarea name="submitterWearing" maxLength={2000} /></div>
+          <div className="field"><label>Clothing, objects, tickets, merch, keepsakes</label><textarea name="artifactInfo" maxLength={4000} /></div>
+          <div className="field"><label>What did we talk about?</label><textarea name="talkedAbout" maxLength={4000} /></div>
+          <div className="field"><label>Was anything exchanged?</label><textarea name="exchanged" maxLength={2000} /></div>
+          <div className="field"><label>What do you think I do not remember about that day?</label><textarea name="forgottenPrompt" maxLength={4000} /></div>
+          <div className="field"><label>If this moment were a page in a book, what should it say?</label><textarea name="bookPagePrompt" maxLength={4000} /></div>
+          <div className="field"><label>Anything else?</label><textarea name="additionalComments" maxLength={4000} /></div>
+        </div>
 
         <p className="micro-note">Photo, video, and audio uploads come later after private storage is configured.</p>
-        <button className="primary-action" type="submit">Share this memory</button>
+        <SubmitMemoryButton />
       </form>
     </main>
   );

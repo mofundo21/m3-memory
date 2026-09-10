@@ -17,5 +17,15 @@ Reason: Avoid contaminating the archive with unreviewed, imported, or AI-generat
 Decision: Commit `graphify-out/GRAPH_REPORT.md`, `graphify-out/graph.json`, and the small `graphify-out/graph.html` visualization when generated. Keep `graphify-out/cost.json`, `graphify-out/cache/`, `graphify-out/.graphify_python`, and root `.graphify_*.json` extraction intermediates local.
 
 Reason: The graph helps agents avoid rereading the entire repository, while cost/cache files are local operational artifacts.
+## 2026-09-10: Keep V0.1 locally testable before Supabase credentials
 
+Decision: Keep the live V0.1 implementation on server-side local SQLite for now, and add a Supabase candidate schema/setup guide without wiring untested credentials.
+
+Reason: The public/private memory workflow can be fully tested locally today. Production storage touches RLS, service-role handling, admin identity, and contributor privacy, so it needs a fresh Supabase project and Tier 3 review before launch.
+
+## 2026-09-10: Add repeatable V0.1 smoke coverage
+
+Decision: Add a no-dependency smoke test that starts the app, submits fictional memories through rendered server-action forms, verifies admin auth boundaries, saves review data, and asserts contributor originals stay unchanged.
+
+Reason: Historical integrity and private admin access need a repeatable check, not just manual verification.
 

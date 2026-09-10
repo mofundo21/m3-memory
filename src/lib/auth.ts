@@ -47,7 +47,7 @@ export async function login(password: string) {
     sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 12
+    maxAge: 60 * 60 * 2
   });
   return true;
 }
@@ -56,4 +56,5 @@ export async function logout() {
   const jar = await cookies();
   jar.delete(cookieName);
 }
+
 

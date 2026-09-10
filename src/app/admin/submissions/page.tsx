@@ -2,8 +2,18 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { isAdminAuthenticated } from "@/lib/auth";
+import { isAdminAuthenticated, logout } from "@/lib/auth";
 import { listSubmissions } from "@/lib/db";
+
+async function logoutAction() {
+  "use server";
+  await logout();
+  redirect("/admin/login");
+}
+
+function place(item: any) {
+  return [item.eventName, item.locationName, item.city, item.region, item.country].filter(Boolean).join(" / ") || "No place added";
+}
 
 export default async function AdminSubmissionsPage() {
   if (!(await isAdminAuthenticated())) redirect("/admin/login");
@@ -16,20 +26,26 @@ export default async function AdminSubmissionsPage() {
           <strong>Memory inbox</strong>
           <span>{submissions.length} private submissions</span>
         </div>
-        <Link className="btn" href="/">Public page</Link>
+        <div className="actions">
+          <Link className="btn" href="/">Public page</Link>
+          <form action={logoutAction}>
+            <button className="btn" type="submit">Sign out</button>
+          </form>
+        </div>
       </header>
 
       <section className="inbox">
         {submissions.length === 0 ? (
           <div className="panel muted">No submissions yet. The production archive starts empty.</div>
         ) : submissions.map((item) => (
-          <Link className="row" key={item.id} href={`/admin/submissions/${item.id}`}>
+          <Link className="row rich-row" key={item.id} href={`/admin/submissions/${item.id}`}>
             <span className="status">{item.status}</span>
-            <span>
-              <strong>{item.submitterName || "Unknown"}</strong><br />
+            <span className="row-main">
+              <strong>{item.submitterName || "Anonymous contributor"}</strong>
               <span className="muted">{item.memoryPreview || "No preview"}</span>
+              <span className="row-meta">{item.encounterDate || "No date"} · {place(item)}</span>
             </span>
-            <span className="muted">{new Date(item.createdAt).toLocaleDateString()}</span>
+            <span className="muted">{new Date(item.createdAt).toLocaleString()}</span>
           </Link>
         ))}
       </section>
