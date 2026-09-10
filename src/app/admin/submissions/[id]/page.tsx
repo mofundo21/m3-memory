@@ -2,13 +2,13 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { isAdminAuthenticated, requireAdmin } from "@/lib/auth";
+import { getAdminAuthMode, requireAdmin } from "@/lib/auth";
 import { getSubmission, upsertReview } from "@/lib/db";
 import { submissionStatuses, type ReviewInput, type SubmissionStatus } from "@/lib/types";
 
 async function saveReview(id: string, formData: FormData) {
   "use server";
-  await requireAdmin();
+  const adminToken = await requireAdmin();
 
   const input: ReviewInput = {
     status: String(formData.get("status") || "UNREVIEWED") as SubmissionStatus,
@@ -27,7 +27,7 @@ async function saveReview(id: string, formData: FormData) {
     privateNotes: String(formData.get("privateNotes") || "")
   };
 
-  upsertReview(id, input);
+  await upsertReview(id, input, adminToken);
   redirect(`/admin/submissions/${id}`);
 }
 
@@ -41,9 +41,14 @@ function OriginalField({ label, value }: { label: string; value: unknown }) {
 }
 
 export default async function SubmissionDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  if (!(await isAdminAuthenticated())) redirect("/admin/login");
+  let adminToken: string | null;
+  try {
+    adminToken = await requireAdmin();
+  } catch {
+    redirect(getAdminAuthMode() === "supabase" ? "/admin/login?error=expired" : "/admin/login");
+  }
   const { id } = await params;
-  const submission = getSubmission(id) as any;
+  const submission = await getSubmission(id, adminToken) as any;
   if (!submission) notFound();
   const original = submission.original;
   const review = submission.review || {};

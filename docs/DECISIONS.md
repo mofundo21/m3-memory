@@ -29,3 +29,21 @@ Decision: Add a no-dependency smoke test that starts the app, submits fictional 
 
 Reason: Historical integrity and private admin access need a repeatable check, not just manual verification.
 
+
+## 2026-09-10: Use Supabase Auth allowlist for production admin
+
+Decision: Production admin access uses Supabase Auth plus the `m3_admins` allowlist. Local SQLite development keeps the password gate for repeatable smoke tests.
+
+Reason: Yeriel needs an actual authenticated admin identity in production, and no arbitrary authenticated Supabase user should become admin by default.
+
+## 2026-09-10: Keep public submissions server-side
+
+Decision: Public contributors submit through the Next.js server path. The browser does not receive direct Supabase table insert/read permissions for archive data.
+
+Reason: Server-side insert with service-role containment is simpler and safer for V0.1 than exposing anonymous insert policies while still preventing listing, reads, updates, deletes, and review access.
+
+## 2026-09-10: Exercise RLS for admin operations
+
+Decision: Supabase admin list/detail/review operations use the authenticated admin JWT, not the service-role key.
+
+Reason: RLS and column-scoped grants should protect contributor originals even if application code sends a bad admin update payload.

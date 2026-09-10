@@ -346,3 +346,21 @@ Then run the harmless cross-model README workflow described in `docs/AI_SYSTEM.m
 
 
 
+
+## Latest Session Update
+
+M3 Memory Supabase production architecture work began from checkpoint `df61ed8`.
+
+Completed in this session:
+
+- Rehydrated from requested docs and `graphify-out/GRAPH_REPORT.md` only.
+- Ran Ponytail scope check: no Supabase SDK dependency; native server-side `fetch` is sufficient for V0.1 Auth/PostgREST.
+- Ran Claude Code plan review through Claudex Loop. Rounds 1-3 returned `REVISE`; round 4 returned `APPROVED`. Artifacts are under `docs/ai-runs/supabase-production/` with runner artifacts in temp paths recorded there.
+- Added Supabase production persistence path while preserving SQLite local mode.
+- Added Supabase Auth admin mode with explicit allowlist verification.
+- Replaced `supabase/schema.sql` with RLS policies, grants, `m3_admins`, helper functions, indexes, and triggers.
+- Added mocked Supabase unit/security tests and kept the existing SQLite production smoke test.
+
+External blocker remains:
+
+- Real Supabase credentials and an allowlisted Supabase Auth admin user are not present in the repo. Production persistence cannot be claimed working until the real Supabase smoke test in `docs/setup/SUPABASE.md` passes.

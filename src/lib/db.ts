@@ -4,6 +4,15 @@ import { dirname, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { submissionStatuses, type ReviewInput, type SubmissionInput, type SubmissionStatus } from "./types";
+import {
+  createSupabaseSubmission,
+  getPersistenceMode,
+  getSupabaseSubmission,
+  listSupabaseSubmissions,
+  upsertSupabaseReview,
+  type NormalizedReview,
+  type NormalizedSubmission
+} from "./supabase";
 
 let db: DatabaseSync | null = null;
 
@@ -120,11 +129,8 @@ function requireStatus(status: SubmissionStatus) {
   }
 }
 
-export function createSubmission(input: SubmissionInput) {
-  const db = getDb();
+function normalizeSubmission(input: SubmissionInput): NormalizedSubmission {
   const createdAt = now();
-  const personId = randomUUID();
-  const submissionId = randomUUID();
   const submitterName = text(input.submitterName, 160);
   const memoryText = text(input.memoryText, 12000);
 
@@ -157,13 +163,62 @@ export function createSubmission(input: SubmissionInput) {
     bookPagePrompt: text(input.bookPagePrompt, 4000),
     additionalComments: text(input.additionalComments, 4000)
   };
-  const memoryPreview = memoryText.slice(0, 220);
 
-  db.prepare("INSERT INTO persons (id, display_name, contact, created_at) VALUES (?, ?, ?, ?)").run(
-    personId,
-    submitterName,
-    optionalText(original.contact, 240),
+  return {
+    id: randomUUID(),
+    personId: randomUUID(),
+    original,
+    memoryPreview: memoryText.slice(0, 220),
+    encounterDate: optionalText(original.encounterDate, 40),
+    isApproximateDate: original.isApproximateDate || false,
+    locationName: optionalText(original.locationName, 240),
+    city: optionalText(original.city, 120),
+    region: optionalText(original.region, 120),
+    country: optionalText(original.country, 120),
+    eventName: optionalText(original.eventName, 240),
     createdAt
+  };
+}
+
+function normalizeReview(input: ReviewInput): NormalizedReview {
+  requireStatus(input.status);
+  return {
+    status: input.status,
+    notes: optionalText(input.notes),
+    remembered: optionalText(input.remembered),
+    corrections: optionalText(input.corrections),
+    context: optionalText(input.context),
+    people: optionalText(input.people, 1000),
+    tags: optionalText(input.tags, 1000),
+    importance: rating(input.importance),
+    emotional_significance: rating(input.emotionalSignificance),
+    historical_significance: rating(input.historicalSignificance),
+    accuracy_confidence: rating(input.accuracyConfidence),
+    book_potential: rating(input.bookPotential),
+    chapter_category: optionalText(input.chapterCategory, 240),
+    private_notes: optionalText(input.privateNotes),
+    updated_at: now()
+  };
+}
+
+function requireSupabaseAdminToken(adminToken?: string | null) {
+  if (!adminToken) throw new Error("UNAUTHENTICATED");
+  return adminToken;
+}
+
+export async function createSubmission(input: SubmissionInput) {
+  const record = normalizeSubmission(input);
+
+  if (getPersistenceMode() === "supabase") {
+    return createSupabaseSubmission(record);
+  }
+
+  const db = getDb();
+  db.prepare("INSERT INTO persons (id, display_name, contact, created_at) VALUES (?, ?, ?, ?)").run(
+    record.personId,
+    record.original.submitterName,
+    optionalText(record.original.contact, 240),
+    record.createdAt
   );
 
   db.prepare(`
@@ -173,25 +228,47 @@ export function createSubmission(input: SubmissionInput) {
       status, created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'UNREVIEWED', ?, ?)
   `).run(
-    submissionId,
-    personId,
-    JSON.stringify(original),
-    memoryPreview,
-    optionalText(original.encounterDate, 40),
-    original.isApproximateDate ? 1 : 0,
-    optionalText(original.locationName, 240),
-    optionalText(original.city, 120),
-    optionalText(original.region, 120),
-    optionalText(original.country, 120),
-    optionalText(original.eventName, 240),
-    createdAt,
-    createdAt
+    record.id,
+    record.personId,
+    JSON.stringify(record.original),
+    record.memoryPreview,
+    record.encounterDate,
+    record.isApproximateDate ? 1 : 0,
+    record.locationName,
+    record.city,
+    record.region,
+    record.country,
+    record.eventName,
+    record.createdAt,
+    record.createdAt
   );
 
-  return submissionId;
+  return record.id;
 }
 
-export function listSubmissions() {
+function mapSupabaseListItem(item: any) {
+  const person = Array.isArray(item.persons) ? item.persons[0] : item.persons;
+  return {
+    id: item.id,
+    status: item.status,
+    memoryPreview: item.memory_preview,
+    encounterDate: item.encounter_date,
+    locationName: item.location_name,
+    city: item.city,
+    region: item.region,
+    country: item.country,
+    eventName: item.event_name,
+    createdAt: item.created_at,
+    submitterName: person?.display_name || null
+  };
+}
+
+export async function listSubmissions(adminToken?: string | null) {
+  if (getPersistenceMode() === "supabase") {
+    const rows = await listSupabaseSubmissions(requireSupabaseAdminToken(adminToken));
+    return rows.map(mapSupabaseListItem);
+  }
+
   const db = getDb();
   return db.prepare(`
     SELECT
@@ -212,7 +289,28 @@ export function listSubmissions() {
   `).all();
 }
 
-export function getSubmission(id: string) {
+function mapSupabaseDetail(row: any) {
+  const person = Array.isArray(row.persons) ? row.persons[0] : row.persons;
+  const reviews = Array.isArray(row.reviews) ? row.reviews : row.reviews ? [row.reviews] : [];
+  const { persons, reviews: _reviews, original_json, ...submission } = row;
+  void persons;
+  void _reviews;
+  return {
+    ...submission,
+    original_json: typeof original_json === "string" ? original_json : JSON.stringify(original_json),
+    submitterName: person?.display_name || null,
+    contact: person?.contact || null,
+    original: typeof original_json === "string" ? JSON.parse(original_json) : original_json,
+    review: reviews[0] || null
+  };
+}
+
+export async function getSubmission(id: string, adminToken?: string | null) {
+  if (getPersistenceMode() === "supabase") {
+    const row = await getSupabaseSubmission(id, requireSupabaseAdminToken(adminToken));
+    return row ? mapSupabaseDetail(row) : null;
+  }
+
   const db = getDb();
   const submission = db.prepare(`
     SELECT
@@ -234,11 +332,16 @@ export function getSubmission(id: string) {
   };
 }
 
-export function upsertReview(submissionId: string, input: ReviewInput) {
-  requireStatus(input.status);
+export async function upsertReview(submissionId: string, input: ReviewInput, adminToken?: string | null) {
+  const review = normalizeReview(input);
+
+  if (getPersistenceMode() === "supabase") {
+    await upsertSupabaseReview(submissionId, review, fetch, requireSupabaseAdminToken(adminToken));
+    return;
+  }
+
   const db = getDb();
   const existing = db.prepare("SELECT id FROM reviews WHERE submission_id = ?").get(submissionId) as any;
-  const updatedAt = now();
   const reviewId = existing?.id || randomUUID();
 
   if (existing) {
@@ -250,20 +353,20 @@ export function upsertReview(submissionId: string, input: ReviewInput) {
         updated_at = ?
       WHERE submission_id = ?
     `).run(
-      optionalText(input.notes),
-      optionalText(input.remembered),
-      optionalText(input.corrections),
-      optionalText(input.context),
-      optionalText(input.people, 1000),
-      optionalText(input.tags, 1000),
-      rating(input.importance),
-      rating(input.emotionalSignificance),
-      rating(input.historicalSignificance),
-      rating(input.accuracyConfidence),
-      rating(input.bookPotential),
-      optionalText(input.chapterCategory, 240),
-      optionalText(input.privateNotes),
-      updatedAt,
+      review.notes,
+      review.remembered,
+      review.corrections,
+      review.context,
+      review.people,
+      review.tags,
+      review.importance,
+      review.emotional_significance,
+      review.historical_significance,
+      review.accuracy_confidence,
+      review.book_potential,
+      review.chapter_category,
+      review.private_notes,
+      review.updated_at,
       submissionId
     );
   } else {
@@ -276,28 +379,27 @@ export function upsertReview(submissionId: string, input: ReviewInput) {
     `).run(
       reviewId,
       submissionId,
-      optionalText(input.notes),
-      optionalText(input.remembered),
-      optionalText(input.corrections),
-      optionalText(input.context),
-      optionalText(input.people, 1000),
-      optionalText(input.tags, 1000),
-      rating(input.importance),
-      rating(input.emotionalSignificance),
-      rating(input.historicalSignificance),
-      rating(input.accuracyConfidence),
-      rating(input.bookPotential),
-      optionalText(input.chapterCategory, 240),
-      optionalText(input.privateNotes),
-      updatedAt,
-      updatedAt
+      review.notes,
+      review.remembered,
+      review.corrections,
+      review.context,
+      review.people,
+      review.tags,
+      review.importance,
+      review.emotional_significance,
+      review.historical_significance,
+      review.accuracy_confidence,
+      review.book_potential,
+      review.chapter_category,
+      review.private_notes,
+      review.updated_at,
+      review.updated_at
     );
   }
 
   db.prepare("UPDATE submissions SET status = ?, updated_at = ? WHERE id = ?").run(
-    input.status,
-    updatedAt,
+    review.status,
+    review.updated_at,
     submissionId
   );
 }
-

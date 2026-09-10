@@ -8,7 +8,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "node scripts/lint.mjs",
-    "test": "npm run build && node scripts/v01-smoke-test.mjs"
+    "test": "npm run build && node --experimental-strip-types scripts/supabase-unit-tests.mjs && node scripts/v01-smoke-test.mjs"
   },
   "dependencies": {
     "next": "^16.3.4",

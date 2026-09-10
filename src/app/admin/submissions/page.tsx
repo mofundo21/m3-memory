@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { isAdminAuthenticated, logout } from "@/lib/auth";
+import { getAdminAuthMode, requireAdmin, logout } from "@/lib/auth";
 import { listSubmissions } from "@/lib/db";
 
 async function logoutAction() {
@@ -16,8 +16,13 @@ function place(item: any) {
 }
 
 export default async function AdminSubmissionsPage() {
-  if (!(await isAdminAuthenticated())) redirect("/admin/login");
-  const submissions = listSubmissions() as any[];
+  let adminToken: string | null;
+  try {
+    adminToken = await requireAdmin();
+  } catch {
+    redirect(getAdminAuthMode() === "supabase" ? "/admin/login?error=expired" : "/admin/login");
+  }
+  const submissions = await listSubmissions(adminToken) as any[];
 
   return (
     <main className="shell admin-shell">

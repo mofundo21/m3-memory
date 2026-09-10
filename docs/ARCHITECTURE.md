@@ -2,7 +2,7 @@
 
 M3 Memory is a mobile-first Next.js, React, and TypeScript application.
 
-V0.1 is locally testable with server-side SQLite storage. Production storage is not yet wired; Supabase/PostgreSQL remains the intended candidate once Yeriel creates a fresh empty project and provides credentials.
+V0.1 is locally testable with server-side SQLite storage and now has a production-capable Supabase persistence path. Supabase must be applied to a fresh empty project and verified with real credentials before launch.
 
 ## Current V0.1 Routes
 
@@ -16,9 +16,28 @@ Public:
 Private:
 
 - `/admin`: redirects to `/admin/submissions`.
-- `/admin/login`: password-gated admin entry.
+- `/admin/login`: local password gate in SQLite mode, Supabase Auth email/password in production mode.
 - `/admin/submissions`: protected private inbox.
 - `/admin/submissions/[id]`: protected original + review detail.
+
+## Persistence Modes
+
+The route-facing persistence API lives in `src/lib/db.ts`:
+
+- `createSubmission()`
+- `listSubmissions()`
+- `getSubmission()`
+- `upsertReview()`
+
+`M3_PERSISTENCE=sqlite` uses local SQLite through Node's built-in SQLite support.
+
+`M3_PERSISTENCE=supabase` uses server-only Supabase REST calls:
+
+- public submission creation writes `persons` and `submissions` with the service-role key from the server only;
+- admin list/detail/review operations use the authenticated Supabase admin JWT so RLS policies are exercised;
+- review operations update `reviews` and `submissions.status`, not `submissions.original_json`.
+
+If Supabase mode is explicitly selected and required Supabase env vars are missing, the app fails the operation with `SUPABASE_MISCONFIGURED` instead of silently falling back.
 
 ## Current Local Persistence
 
@@ -35,36 +54,46 @@ Tables:
 
 The application writes contributor originals only during submission creation. Review saves update the separate `reviews` row and status metadata, not `submissions.original_json`.
 
-## Security Requirements
-
-Anonymous users can submit.
-
-Anonymous users cannot:
-
-- enumerate submissions
-- retrieve other submissions
-- retrieve media belonging to other submissions unless explicitly public
-- see admin metadata
-- see Yeriel review data
-- modify source submissions
-
-Admin access is currently protected by a server-side password session cookie. Production requires explicit `ADMIN_PASSWORD` and `SESSION_SECRET`; local development has fallback values only outside production.
-
-Production storage must use database-level authorization where supported. Never expose service-role credentials in browser code.
-
-Validate uploads, request sizes, file types, and all trust-boundary inputs before enabling media.
-
-## Supabase Candidate
+## Production Supabase Persistence
 
 Candidate SQL lives in `supabase/schema.sql`; setup instructions live in `docs/setup/SUPABASE.md`.
 
-The candidate schema:
+The production schema:
 
-- starts empty
-- keeps contributor originals and Yeriel reviews separate
-- enables RLS on archive tables
-- revokes default `anon` and `authenticated` table grants
-- expects public submission/admin operations to remain server-side
+- starts empty;
+- keeps contributor originals and Yeriel reviews separate;
+- stores Supabase originals as JSONB objects, not stringified JSON;
+- uses `m3_admins` as the explicit admin allowlist;
+- enables RLS on archive tables;
+- grants no archive table access to `anon`;
+- grants authenticated users only RLS-gated admin access;
+- grants status-only updates on `submissions` so `original_json` cannot be updated through the admin JWT;
+- leaves media/artifacts/story drafts default-deny until their workflows exist.
+
+## Admin Auth
+
+`M3_ADMIN_AUTH=local` keeps the existing password session for local SQLite testing.
+
+`M3_ADMIN_AUTH=supabase` uses Supabase Auth plus `m3_admins`. A valid Supabase account is not enough; the user id or lowercased email must be present in `m3_admins`.
+
+Session cookies are HTTP-only, `sameSite: "strict"`, and secure in production.
+
+## Security Requirements
+
+Anonymous users can submit through the server action.
+
+Anonymous users cannot:
+
+- enumerate submissions;
+- retrieve other submissions;
+- retrieve media belonging to other submissions unless explicitly public;
+- see admin metadata;
+- see Yeriel review data;
+- modify source submissions.
+
+Never expose service-role credentials in browser code.
+
+Validate uploads, request sizes, file types, and all trust-boundary inputs before enabling media.
 
 Do not claim Supabase integration works until a real project is configured and tested.
 

@@ -38,7 +38,7 @@ async function submitMemory(formData: FormData) {
     redirect("/remember?error=missing");
   }
 
-  createSubmission(input);
+  await createSubmission(input);
   redirect("/thanks");
 }
 

@@ -1,7 +1,15 @@
--- M3 Memory V0.1 production candidate schema.
+-- M3 Memory V0.1 production Supabase schema.
 -- Apply only to a new empty Supabase project. Do not import old memories or lore.
 
 create extension if not exists pgcrypto;
+
+create table if not exists public.m3_admins (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid unique,
+  email text unique,
+  created_at timestamptz not null default now(),
+  check (user_id is not null or email is not null)
+);
 
 create table if not exists public.persons (
   id uuid primary key default gen_random_uuid(),
@@ -74,6 +82,48 @@ create table if not exists public.story_drafts (
   created_at timestamptz not null default now()
 );
 
+create index if not exists idx_m3_admins_user_id on public.m3_admins(user_id);
+create index if not exists idx_m3_admins_email on public.m3_admins(email);
+create index if not exists idx_submissions_status on public.submissions(status);
+create index if not exists idx_submissions_created_at on public.submissions(created_at desc);
+create index if not exists idx_reviews_submission_id on public.reviews(submission_id);
+
+create or replace function public.is_m3_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.m3_admins
+    where user_id = auth.uid()
+       or lower(email) = lower(auth.jwt()->>'email')
+  );
+$$;
+
+create or replace function public.trigger_update_updated_at()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists update_submissions_updated_at on public.submissions;
+create trigger update_submissions_updated_at
+before update on public.submissions
+for each row execute function public.trigger_update_updated_at();
+
+drop trigger if exists update_reviews_updated_at on public.reviews;
+create trigger update_reviews_updated_at
+before update on public.reviews
+for each row execute function public.trigger_update_updated_at();
+
+alter table public.m3_admins enable row level security;
 alter table public.persons enable row level security;
 alter table public.submissions enable row level security;
 alter table public.reviews enable row level security;
@@ -81,13 +131,66 @@ alter table public.media enable row level security;
 alter table public.artifacts enable row level security;
 alter table public.story_drafts enable row level security;
 
--- Default stance: anonymous/browser clients cannot read or modify archive data.
--- Server-side insertion/review should use a locked-down backend route with service-role credentials.
--- Add explicit authenticated admin policies only after the admin identity model is chosen.
-
+revoke all on public.m3_admins from anon, authenticated;
 revoke all on public.persons from anon, authenticated;
 revoke all on public.submissions from anon, authenticated;
 revoke all on public.reviews from anon, authenticated;
 revoke all on public.media from anon, authenticated;
 revoke all on public.artifacts from anon, authenticated;
 revoke all on public.story_drafts from anon, authenticated;
+
+grant select on public.m3_admins to authenticated;
+grant select on public.persons to authenticated;
+grant select on public.submissions to authenticated;
+grant update(status, updated_at) on public.submissions to authenticated;
+grant insert, select on public.reviews to authenticated;
+grant update(
+  notes,
+  remembered,
+  corrections,
+  context,
+  people,
+  tags,
+  importance,
+  emotional_significance,
+  historical_significance,
+  accuracy_confidence,
+  book_potential,
+  chapter_category,
+  private_notes,
+  updated_at
+) on public.reviews to authenticated;
+
+create policy admin_read_allowlist on public.m3_admins
+for select to authenticated
+using (public.is_m3_admin());
+
+create policy admin_read_persons on public.persons
+for select to authenticated
+using (public.is_m3_admin());
+
+create policy admin_read_submissions on public.submissions
+for select to authenticated
+using (public.is_m3_admin());
+
+create policy admin_update_submission_status on public.submissions
+for update to authenticated
+using (public.is_m3_admin())
+with check (public.is_m3_admin());
+
+create policy admin_read_reviews on public.reviews
+for select to authenticated
+using (public.is_m3_admin());
+
+create policy admin_insert_reviews on public.reviews
+for insert to authenticated
+with check (public.is_m3_admin());
+
+create policy admin_update_reviews on public.reviews
+for update to authenticated
+using (public.is_m3_admin())
+with check (public.is_m3_admin());
+
+-- No anon policies are created. Public submissions are inserted only through the
+-- Next.js server path with SUPABASE_SERVICE_ROLE_KEY. Media, artifacts, and
+-- story_drafts intentionally remain default-deny until their workflows exist.
