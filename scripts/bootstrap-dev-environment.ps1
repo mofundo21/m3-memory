@@ -1,0 +1,11 @@
+$ErrorActionPreference = "Stop"
+
+Write-Host "This script documents the safe rebuild sequence. It does not install credentials."
+Write-Host "1. Install Node 22+ or 24+."
+Write-Host "2. Install Codex CLI per official OpenAI docs, then run: codex login"
+Write-Host "3. Install Claude Code per Anthropic docs, then run: claude auth status"
+Write-Host "4. Install Graphify: uv tool install graphifyy"
+Write-Host "5. Register Graphify in repo: graphify codex install; graphify claude install"
+Write-Host "6. Install Claudex Loop skills from tools/vendor/claudex-loop or current upstream README."
+Write-Host "7. Install Ponytail skills from tools/vendor/ponytail or current upstream README."
+Write-Host "8. Keep OmniRoute isolated until direct Claude/Codex tests pass."

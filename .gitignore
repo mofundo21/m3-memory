@@ -1,0 +1,22 @@
+.next/
+node_modules/
+dist/
+coverage/
+.env
+.env.local
+.m3-memory/
+uploads/
+npm-debug.log*
+tsconfig.tsbuildinfo
+
+# AI tool operational files
+graphify-out/cost.json
+graphify-out/cache/
+tools/vendor/*/.git/
+tools/vendor/**/node_modules/
+tools/vendor/**/.next/
+tools/vendor/**/dist/
+tools/vendor/**/coverage/
+tools/vendor/
+graphify-out/.graphify_python
+.graphify_*.json

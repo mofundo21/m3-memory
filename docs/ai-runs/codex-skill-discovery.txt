@@ -1,0 +1,26 @@
+Relevant skills discoverable in this session:
+
+**Claudex Loop**
+- `claudex-loop`
+- `claudex-route`
+- `codex-build`
+- `codex-review`
+
+**Ponytail**
+- `ponytail`
+- `ponytail-review`
+- `ponytail-audit`
+- `ponytail-debt`
+- `ponytail-gain`
+- `ponytail-help`
+
+**M3 Memory**
+- `m3-memory-archive`
+- `m3-memory-review`
+- `m3-evidence-check`
+- `m3-story-builder`
+
+**Graphify**
+- No dedicated Graphify skill is listed, but the repo instructions require using `graphify-out/GRAPH_REPORT.md`, `graphify query`, `graphify path`, `graphify explain`, and `graphify update .` when relevant.
+
+No files edited.

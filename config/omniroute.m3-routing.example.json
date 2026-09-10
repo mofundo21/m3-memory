@@ -1,0 +1,27 @@
+{
+  "purpose": "M3 Memory routing design placeholder. Do not use for critical workflow until OmniRoute direct tests pass.",
+  "tiers": {
+    "A_HARD_HIGH_RISK": {
+      "examples": ["architecture", "authentication", "database design", "security", "migrations", "dangerous refactors", "final adversarial review"],
+      "minimum": "strongest-capable-model",
+      "allowCheapFallback": false
+    },
+    "B_NORMAL_ENGINEERING": {
+      "examples": ["standard feature implementation", "UI work", "common bug fixing"],
+      "minimum": "strong-cost-conscious-model"
+    },
+    "C_EASY": {
+      "examples": ["formatting", "documentation cleanup", "mechanical transformations", "simple boilerplate"],
+      "minimum": "cheap-capable-model"
+    },
+    "D_FALLBACK": {
+      "rule": "Use only models meeting the task minimum capability. Never silently downgrade security, privacy, data integrity, or architecture work."
+    }
+  },
+  "authPolicy": {
+    "subscriptionAuthenticatedServices": "distinct-from-api-billed-services",
+    "apiBackedFallbackProviders": "configure-later-with-explicit-credentials",
+    "doNotHackProviderRestrictions": true
+  },
+  "status": "design-only"
+}

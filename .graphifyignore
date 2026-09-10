@@ -1,0 +1,22 @@
+# Dependencies and package manager output
+node_modules/
+package-lock.json
+npm-debug.log*
+
+# Build and test output
+.next/
+dist/
+coverage/
+tsconfig.tsbuildinfo
+
+# Local development and private archive data
+.env
+.env.local
+.m3-memory/
+uploads/
+
+# Tooling/vendor checkouts and graphify generated state
+tools/vendor/
+graphify-out/cache/
+graphify-out/converted/
+graphify-out/cost.json
