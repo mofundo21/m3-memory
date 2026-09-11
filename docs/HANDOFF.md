@@ -614,3 +614,76 @@ All 4 sections of `/remember` form are production-ready and match HANDOFF.md doc
 - ✅ `git status` — working tree clean (no secrets, .env, or unrelated changes staged)
 
 Ready for V0.2 Milestone 1 (secure small image uploads).
+
+## V0.2 Milestone 1 — Wire Media Uploads + Admin Preview (2026-09-11)
+
+**Completed in this session:**
+
+Media Upload Form Integration:
+- Added `MediaPicker.tsx` client component: thumbnail preview grid, remove-before-submit buttons, max 5 file count display, plain React state (no new dependencies)
+- Wired `<input type="file" multiple accept="image/jpeg,image/png,image/webp">` into "Media & Consent" section alongside existing `mediaLink` field
+- Server action `submitMemory`: extracts files, validates via `validateMediaUpload()`, uploads to Storage, inserts `media` rows, or redirects with error state on failure
+
+Upload Flow Architecture:
+- Submission row created first (always durable)
+- Media upload/insert attempted after, with error redirection if either fails (submission still saved, no rollback)
+- Both Supabase and SQLite backends supported: dispatches to correct persistence layer based on `getPersistenceMode()`
+- Validation enforced server-side: max 5 files, allowed MIME types (`image/jpeg|image/png|image/webp`), size limits (configurable constant `MAX_FILE_SIZE_BYTES`)
+- No mutations to `submissions.original_json` — media stored in separate `media` table with one row per file, FK on `submission_id`
+
+Admin Media View:
+- `/admin/submissions/[id]` now renders:
+  - `media_link` field (external URL, if present)
+  - `media_consent` checkbox state (Yes/No)
+  - Attached media grid: thumbnail preview + filename per file, click-to-fetch via admin route
+- Fetches media via existing `getSubmissionMedia(submissionId, adminToken)`
+- Grid styling reuses existing admin CSS classes (no new dependencies)
+
+Admin Media Fetch Route:
+- New route: `GET /admin/media/[mediaId]`
+- Gated by `requireAdmin()` (same auth check as other `/admin` routes)
+- Queries `media` table by id, fetches bytes from private Supabase Storage via service-role key
+- Returns bytes with correct `Content-Type` and `Content-Disposition` headers for inline/download
+- Never exposes public bucket URLs; all Storage access server-side-only via service-role
+
+RLS & Security:
+- Media table RLS already enabled with admin-read policy + default-deny for anon/authenticated (lines 210-212 of `supabase/schema.sql`)
+- Storage bucket remains private (no public read grants)
+- Admin fetch route is server-only; service-role key never reaches client
+- Validation enforced at persistence boundary (SQLite prepare statement, Supabase REST API with service-role auth)
+
+Gate Verification (2026-09-11):
+- ✅ `npm run lint` — no forbidden references
+- ✅ `npm run typecheck` — zero type errors (fixed imports of `getPersistenceMode` from supabase.ts)
+- ✅ `npm run build` — production build succeeded
+- ✅ `npm test` — mocked unit tests + SQLite smoke test passed (existing tests still pass; new tests not yet written)
+- ✅ `git status` — working tree clean
+
+**Outstanding Items (Planned for Next Session):**
+
+Storage Bucket Creation:
+- Supabase Storage bucket `submission-media` (private) must be created manually via Supabase dashboard or one-time SQL `INSERT INTO storage.buckets` (no SDK/CLI wired into repo)
+- Until bucket exists, media uploads will return 404/bucket-not-found
+
+Tests:
+- Extend `scripts/supabase-unit-tests.mjs` with media upload unit tests (valid/invalid/oversized/MIME rejection, RLS assertions, immutability check)
+- Extend `scripts/v01-smoke-test.mjs` with SQLite smoke test for file uploads (text-only regression + valid upload round-trip)
+- Run full gate after tests added
+
+Independent Security Review:
+- Tier 3 scoped review of Storage bucket config + RLS policies + service-role exposure required before any `vercel --prod` deploy of media feature
+- This review is not performed in this pass per plan; flagged as blocking gate
+
+**Commit Signature:**
+
+Commit `a8e0924` — "feat: wire up media file uploads and admin preview"
+- 4 files changed: 2 modified (remember/page.tsx, admin/submissions/[id]/page.tsx), 2 new (MediaPicker.tsx, admin/media/[mediaId]/route.ts)
+- 303 insertions, 3 deletions
+
+**Ready to Deploy Media: NO**
+
+Blockers:
+1. Storage bucket not created (manual step, can't script)
+2. Tests not yet written (required for gate)
+3. Independent Security review not yet scheduled (Tier 3 gate)
+4. All three blockers must be cleared before `vercel --prod` deploy of this feature
