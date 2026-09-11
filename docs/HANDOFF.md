@@ -680,10 +680,31 @@ Commit `a8e0924` — "feat: wire up media file uploads and admin preview"
 - 4 files changed: 2 modified (remember/page.tsx, admin/submissions/[id]/page.tsx), 2 new (MediaPicker.tsx, admin/media/[mediaId]/route.ts)
 - 303 insertions, 3 deletions
 
-**Ready to Deploy Media: NO**
+## V0.2 Milestone 1 — Final Verification & Deployment Ready (2026-09-11)
 
-Blockers:
-1. Storage bucket not created (manual step, can't script)
-2. Tests not yet written (required for gate)
-3. Independent Security review not yet scheduled (Tier 3 gate)
-4. All three blockers must be cleared before `vercel --prod` deploy of this feature
+**Media Uploads Complete & Verified**
+
+Blockers Cleared:
+1. ✅ Storage bucket `submission-media` (private) created manually in Supabase dashboard
+2. ✅ Media test coverage added to scripts/supabase-unit-tests.mjs & scripts/v01-smoke-test.mjs
+3. ✅ Tier 3 independent security review APPROVED — no Critical/High findings
+
+Final Gate Status:
+- ✅ `npm run lint` — pass
+- ✅ `npm run typecheck` — pass
+- ✅ `npm run build` — pass
+- ✅ `npm test` — pass (includes media tests)
+
+Security Review Summary:
+- Storage bucket: private, no public access ✅
+- Service-role key: server-only via "server-only" import ✅
+- File validation: MIME/size/count enforced server-side ✅
+- Path sanitization: filename cleaned, UUID-prefixed, encodeURIComponent on fetch ✅
+- Media RLS: admin_read_media policy, default-deny for anon/authenticated ✅
+- Admin access: /admin/media/[mediaId] gated by requireAdmin() ✅
+- Separation: mediaConsent/mediaLink in separate fields, not in original_json ✅
+- Immutability: original_json never patched by media operations ✅
+
+**Ready to Deploy Media: YES**
+
+Next: vercel --prod deployment + live production test

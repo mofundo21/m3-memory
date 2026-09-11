@@ -53,9 +53,10 @@ function decode(value) {
     .replaceAll("&gt;", ">");
 }
 
-function form(fields) {
+function form(fields, files = {}) {
   const body = new FormData();
   for (const [key, value] of Object.entries(fields)) body.set(key, value);
+  for (const [key, file] of Object.entries(files)) body.append(key, file);
   return body;
 }
 
@@ -95,14 +96,54 @@ try {
   });
   assert.equal(optionalSubmit.status, 303, "optional fields may be omitted");
 
+  // Test media upload: create a tiny 1x1 PNG (89 bytes minimum, created in-memory)
+  const pngBytes = Buffer.from([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+    0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+    0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00,
+    0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+    0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49,
+    0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82
+  ]);
+  const mediaFile = new File([pngBytes], "test-memory-image.png", {
+    type: "image/png"
+  });
+
+  const rememberFormForMedia = actionFields(await (await fetch(`${base}/remember`)).text());
+  const mediaSubmit = await fetch(`${base}/remember`, {
+    method: "POST",
+    body: (() => {
+      const formData = new FormData();
+      for (const [key, value] of Object.entries(rememberFormForMedia)) {
+        formData.set(key, value);
+      }
+      formData.set("submitterName", "Fictional Media Test");
+      formData.set("memoryText", "Memory with a small test image attached");
+      formData.set("mediaConsent", "on");
+      formData.append("media", mediaFile);
+      return formData;
+    })(),
+    redirect: "manual"
+  });
+  assert.equal(mediaSubmit.status, 303, "submission with media should redirect");
+  assert.equal(mediaSubmit.headers.get("location"), "/thanks");
+
   const db = new DatabaseSync(dbPath);
-  const submissions = db.prepare("SELECT id, status, original_json FROM submissions ORDER BY created_at ASC").all();
-  assert.equal(submissions.length, 2);
+  const submissions = db.prepare("SELECT id, status, original_json, media_consent FROM submissions ORDER BY created_at ASC").all();
+  assert.equal(submissions.length, 3);
   assert.equal(submissions[0].status, "UNREVIEWED");
   const originalBefore = JSON.parse(submissions[0].original_json);
   assert.equal(originalBefore.submitterName, "Fictional River");
   assert.equal(originalBefore.memoryText.length, 12000, "long memory is capped at persistence boundary");
   assert.equal(JSON.parse(submissions[1].original_json).eventName, "", "optional fields omitted are stored as empty source fields");
+
+  // Verify media upload test submission
+  assert.equal(submissions[2].media_consent, 1, "mediaConsent persists");
+  const mediaSubmissionId = submissions[2].id;
+  const mediaRows = db.prepare("SELECT id, file_name, mime_type FROM media WHERE submission_id = ?").all(mediaSubmissionId);
+  assert.equal(mediaRows.length, 1, "one media row created for submission");
+  assert.equal(mediaRows[0].file_name, "test-memory-image.png");
+  assert.equal(mediaRows[0].mime_type, "image/png");
 
   const publicAdminList = await fetch(`${base}/admin/submissions`, { redirect: "manual" });
   assert.equal(publicAdminList.status, 307, "public cannot list submissions");

@@ -217,5 +217,19 @@ for (const path of walk(".next/static")) {
   assert.doesNotMatch(content, /SUPABASE_SERVICE_ROLE_KEY|test-service-role-placeholder/);
 }
 
+{
+  const schema = readFileSync("supabase/schema.sql", "utf8");
+
+  // Test: media table RLS policies exist
+  assert.match(schema, /create table if not exists public\.media/i, "media table defined");
+  assert.match(schema, /create policy admin_read_media/i, "media RLS policy for admins exists");
+  assert.match(schema, /admin_read_media[\s\S]{0,200}is_m3_admin/i, "media RLS uses admin check");
+
+  // Test: mediaLink and mediaConsent are separate fields, not in original_json
+  assert.match(schema, /create table if not exists public\.submissions/);
+  assert.match(schema, /media_link.*text/i, "media_link column exists");
+  assert.match(schema, /media_consent.*boolean/i, "media_consent column exists");
+}
+
 restoreEnv();
-console.log("supabase unit/security tests ok");
+console.log("supabase unit/security tests ok (including media schema & RLS)");
