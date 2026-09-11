@@ -207,6 +207,11 @@ for update to authenticated
 using (public.is_m3_admin())
 with check (public.is_m3_admin());
 
--- No anon policies are created. Public submissions are inserted only through the
--- Next.js server path with SUPABASE_SERVICE_ROLE_KEY. Story drafts are admin-only
--- and never accessible to anonymous or non-admin authenticated users.
+create policy admin_read_media on public.media
+for select to authenticated
+using (public.is_m3_admin());
+
+-- No anon policies are created. Public submissions and media are inserted only through the
+-- Next.js server path with SUPABASE_SERVICE_ROLE_KEY (which bypasses RLS). Media and story drafts are admin-only
+-- and never accessible to anonymous or non-admin authenticated users. Media table defaults to default-deny
+-- (RLS enabled, no insert/update/delete grants to any role, insert through service role only).

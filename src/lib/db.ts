@@ -13,6 +13,9 @@ import {
   createSupabaseStoryDraft,
   getSupabaseStoryDrafts,
   updateSupabaseStoryDraft,
+  uploadSupabaseMedia,
+  insertSupabaseMediaRows,
+  getSupabaseSubmissionMedia,
   type NormalizedReview,
   type NormalizedSubmission
 } from "./supabase";
@@ -479,4 +482,65 @@ export async function updateStoryDraft(draftId: string, label: string, draftText
     draftText,
     draftId
   );
+}
+
+// Media upload validation and persistence
+const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024; // 8 MB
+const MAX_FILES_PER_SUBMISSION = 5;
+const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+export interface MediaUploadInput {
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+}
+
+export function validateMediaUpload(files: MediaUploadInput[]) {
+  if (files.length > MAX_FILES_PER_SUBMISSION) {
+    throw new Error("TOO_MANY_FILES");
+  }
+
+  for (const file of files) {
+    if (!file.mimeType || !ALLOWED_MIME_TYPES.has(file.mimeType)) {
+      throw new Error("INVALID_MIME_TYPE");
+    }
+    if (file.sizeBytes > MAX_FILE_SIZE_BYTES) {
+      throw new Error("FILE_TOO_LARGE");
+    }
+  }
+}
+
+export async function insertMediaRows(submissionId: string, files: Array<{ fileName: string; mimeType: string; sizeBytes: number; storagePath: string }>, adminToken?: string | null) {
+  if (getPersistenceMode() === "supabase") {
+    const token = requireSupabaseAdminToken(adminToken);
+    return insertSupabaseMediaRows(submissionId, files, token);
+  }
+
+  const db = getDb();
+  const createdAt = now();
+
+  for (const file of files) {
+    db.prepare(`
+      INSERT INTO media (id, submission_id, file_name, mime_type, storage_path, size_bytes, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      randomUUID(),
+      submissionId,
+      file.fileName,
+      file.mimeType,
+      file.storagePath,
+      file.sizeBytes,
+      createdAt
+    );
+  }
+}
+
+export async function getSubmissionMedia(submissionId: string, adminToken?: string | null) {
+  if (getPersistenceMode() === "supabase") {
+    const token = requireSupabaseAdminToken(adminToken);
+    return getSupabaseSubmissionMedia(submissionId, token);
+  }
+
+  const db = getDb();
+  return (db.prepare("SELECT id, file_name, mime_type, storage_path, size_bytes, created_at FROM media WHERE submission_id = ? ORDER BY created_at ASC").all(submissionId) as any[]) || [];
 }

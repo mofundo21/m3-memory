@@ -1,4 +1,5 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import type { ReviewInput, SubmissionInput, SubmissionStatus } from "./types";
 
 export type LoginResult = "ok" | "invalid" | "unauthorized" | "expired";
@@ -294,4 +295,52 @@ export async function updateSupabaseStoryDraft(draftId: string, label: string, d
     headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
     body: JSON.stringify({ label, draft_text: draftText })
   }, fetchImpl);
+}
+
+export async function uploadSupabaseMedia(submissionId: string, fileName: string, fileBuffer: Uint8Array | Buffer, contentType: string, fetchImpl: FetchLike = fetch) {
+  const config = getSupabaseConfig(true);
+  const storagePath = `submissions/${submissionId}/${randomUUID()}-${sanitizeFileName(fileName)}`;
+
+  const body = Buffer.isBuffer(fileBuffer) ? new Uint8Array(fileBuffer) : fileBuffer;
+
+  await request(`${config.url}/storage/v1/object/submission-media/${encodeURIComponent(storagePath)}`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${config.serviceRoleKey}` },
+    body: body as BodyInit
+  }, fetchImpl);
+
+  return storagePath;
+}
+
+export async function insertSupabaseMediaRows(submissionId: string, files: Array<{ fileName: string; mimeType: string; sizeBytes: number; storagePath: string }>, adminToken: string, fetchImpl: FetchLike = fetch) {
+  const config = getSupabaseConfig(false);
+  const createdAt = new Date().toISOString();
+
+  const mediaRows = files.map(f => ({
+    id: randomUUID(),
+    submission_id: submissionId,
+    file_name: f.fileName,
+    mime_type: f.mimeType,
+    storage_path: f.storagePath,
+    size_bytes: f.sizeBytes,
+    created_at: createdAt
+  }));
+
+  await request(`${config.url}/rest/v1/media`, {
+    method: "POST",
+    headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
+    body: JSON.stringify(mediaRows)
+  }, fetchImpl);
+}
+
+export async function getSupabaseSubmissionMedia(submissionId: string, adminToken: string, fetchImpl: FetchLike = fetch) {
+  const config = getSupabaseConfig(false);
+  return request(`${config.url}/rest/v1/media?submission_id=eq.${encodeURIComponent(submissionId)}&order=created_at.asc`, {
+    method: "GET",
+    headers: headers(config.anonKey, adminToken)
+  }, fetchImpl) as Promise<any[]>;
+}
+
+function sanitizeFileName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 200);
 }
