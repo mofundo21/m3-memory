@@ -50,6 +50,14 @@ export type NormalizedReview = {
   updated_at: string;
 };
 
+export type NormalizedStoryDraft = {
+  id: string;
+  submissionId: string;
+  label: string;
+  draftText: string;
+  createdAt: string;
+};
+
 export function hasSupabaseEnv() {
   return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY);
 }
@@ -250,5 +258,38 @@ export async function upsertSupabaseReview(submissionId: string, review: Normali
     method: "PATCH",
     headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
     body: JSON.stringify({ status: review.status, updated_at: review.updated_at })
+  }, fetchImpl);
+}
+
+export async function createSupabaseStoryDraft(submissionId: string, label: string, draftText: string, draftId: string, createdAt: string, adminToken: string, fetchImpl: FetchLike = fetch) {
+  const config = getSupabaseConfig(false);
+  await request(`${config.url}/rest/v1/story_drafts`, {
+    method: "POST",
+    headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
+    body: JSON.stringify({
+      id: draftId,
+      submission_id: submissionId,
+      label,
+      draft_text: draftText,
+      created_at: createdAt
+    })
+  }, fetchImpl);
+  return draftId;
+}
+
+export async function getSupabaseStoryDrafts(submissionId: string, adminToken: string, fetchImpl: FetchLike = fetch) {
+  const config = getSupabaseConfig(false);
+  return request(`${config.url}/rest/v1/story_drafts?submission_id=eq.${encodeURIComponent(submissionId)}&order=created_at.desc`, {
+    method: "GET",
+    headers: headers(config.anonKey, adminToken)
+  }, fetchImpl) as Promise<any[]>;
+}
+
+export async function updateSupabaseStoryDraft(draftId: string, label: string, draftText: string, adminToken: string, fetchImpl: FetchLike = fetch) {
+  const config = getSupabaseConfig(false);
+  await request(`${config.url}/rest/v1/story_drafts?id=eq.${encodeURIComponent(draftId)}`, {
+    method: "PATCH",
+    headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
+    body: JSON.stringify({ label, draft_text: draftText })
   }, fetchImpl);
 }

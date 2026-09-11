@@ -160,6 +160,7 @@ grant update(
   private_notes,
   updated_at
 ) on public.reviews to authenticated;
+grant insert, select, update on public.story_drafts to authenticated;
 
 create policy admin_read_allowlist on public.m3_admins
 for select to authenticated
@@ -191,6 +192,19 @@ for update to authenticated
 using (public.is_m3_admin())
 with check (public.is_m3_admin());
 
+create policy admin_read_story_drafts on public.story_drafts
+for select to authenticated
+using (public.is_m3_admin());
+
+create policy admin_insert_story_drafts on public.story_drafts
+for insert to authenticated
+with check (public.is_m3_admin());
+
+create policy admin_update_story_drafts on public.story_drafts
+for update to authenticated
+using (public.is_m3_admin())
+with check (public.is_m3_admin());
+
 -- No anon policies are created. Public submissions are inserted only through the
--- Next.js server path with SUPABASE_SERVICE_ROLE_KEY. Media, artifacts, and
--- story_drafts intentionally remain default-deny until their workflows exist.
+-- Next.js server path with SUPABASE_SERVICE_ROLE_KEY. Story drafts are admin-only
+-- and never accessible to anonymous or non-admin authenticated users.

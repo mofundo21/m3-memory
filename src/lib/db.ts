@@ -10,6 +10,9 @@ import {
   getSupabaseSubmission,
   listSupabaseSubmissions,
   upsertSupabaseReview,
+  createSupabaseStoryDraft,
+  getSupabaseStoryDrafts,
+  updateSupabaseStoryDraft,
   type NormalizedReview,
   type NormalizedSubmission
 } from "./supabase";
@@ -406,9 +409,10 @@ export async function upsertReview(submissionId: string, input: ReviewInput, adm
 
 export async function createStoryDraft(submissionId: string, label: string, draftText: string, adminToken?: string | null) {
   if (getPersistenceMode() === "supabase") {
-    requireSupabaseAdminToken(adminToken);
-    // TODO: implement Supabase story draft creation
-    return randomUUID();
+    const token = requireSupabaseAdminToken(adminToken);
+    const draftId = randomUUID();
+    const createdAt = now();
+    return createSupabaseStoryDraft(submissionId, label, draftText, draftId, createdAt, token);
   }
 
   const db = getDb();
@@ -432,9 +436,8 @@ export async function createStoryDraft(submissionId: string, label: string, draf
 
 export async function getStoryDrafts(submissionId: string, adminToken?: string | null) {
   if (getPersistenceMode() === "supabase") {
-    requireSupabaseAdminToken(adminToken);
-    // TODO: implement Supabase story draft retrieval
-    return [];
+    const token = requireSupabaseAdminToken(adminToken);
+    return getSupabaseStoryDrafts(submissionId, token);
   }
 
   const db = getDb();
@@ -443,20 +446,18 @@ export async function getStoryDrafts(submissionId: string, adminToken?: string |
 
 export async function updateStoryDraft(draftId: string, label: string, draftText: string, adminToken?: string | null) {
   if (getPersistenceMode() === "supabase") {
-    requireSupabaseAdminToken(adminToken);
-    // TODO: implement Supabase story draft update
+    const token = requireSupabaseAdminToken(adminToken);
+    await updateSupabaseStoryDraft(draftId, label, draftText, token);
     return;
   }
 
   const db = getDb();
-  const updatedAt = now();
 
   db.prepare(`
-    UPDATE story_drafts SET label = ?, draft_text = ?, created_at = ? WHERE id = ?
+    UPDATE story_drafts SET label = ?, draft_text = ? WHERE id = ?
   `).run(
     label,
     draftText,
-    updatedAt,
     draftId
   );
 }
