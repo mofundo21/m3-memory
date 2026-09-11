@@ -445,3 +445,59 @@ Test data status:
 - One fictional `submissions` row (created during smoke test)
 - One fictional `reviews` row (created during review create/update test)
 - These rows remain in Supabase until explicit approval for deletion by exact ID
+
+## Live Production Deployment (2026-09-11 12:00+ UTC)
+
+**Hosting Provider:** Vercel
+
+**Deployment Process:**
+1. Installed Vercel CLI and authenticated with Vercel account
+2. Deployed to Vercel production: `vercel --prod --yes`
+3. Configured all 6 Supabase environment variables in Vercel
+4. Redeployed production with environment variables
+5. Verified all routes and authentication gates
+
+**Production URLs:**
+- Aliased: https://m3-memory.vercel.app
+- Full: https://m3-memory-o2jo4t99v-mofundo1-1429s-projects.vercel.app
+
+**Environment Variables Configured (Vercel Production):**
+- M3_PERSISTENCE=supabase ✓
+- M3_ADMIN_AUTH=supabase ✓
+- NEXT_PUBLIC_SUPABASE_URL ✓
+- NEXT_PUBLIC_SUPABASE_ANON_KEY ✓
+- SUPABASE_SERVICE_ROLE_KEY ✓ (server-only)
+- SESSION_SECRET ✓ (server-only)
+
+**Live Deployment Verification:**
+
+Public Routes:
+- GET `/` → 200 OK, home page accessible ✓
+- GET `/remember` → 200 OK, memory form accessible ✓
+- GET `/thanks` → 200 OK, confirmation page accessible ✓
+
+Admin Routes (Authentication):
+- GET `/admin/login` → 200 OK, login form accessible ✓
+- GET `/admin/submissions` → 307 redirect to `/admin/login` ✓ (correctly protected)
+
+Privacy Verification:
+- No submission data exposed on public `/thanks` page ✓
+- Admin routes correctly redirect unauthenticated requests ✓
+
+Secrets Verification:
+- SUPABASE_SERVICE_ROLE_KEY not present in browser bundles ✓
+- SESSION_SECRET not present in browser bundles ✓
+- No .env.local committed to git ✓
+
+**Deployment Test Data:**
+- Deployment smoke-test submission attempted (test ID: deploy-smoke-1789101143822)
+- Data scheduled for cleanup after final verification
+
+**Build Information:**
+- Next.js 16.3.4 build completed successfully
+- Turbopack compiled 9 static pages
+- Routes generated:
+  - Static: `/`, `/_not-found`, `/admin`, `/submit`, `/submit/thanks`, `/thanks`
+  - Dynamic: `/admin/login`, `/admin/submissions`, `/admin/submissions/[id]`, `/api/health`, `/remember`
+
+**Status: LIVE AND ACCESSIBLE**
