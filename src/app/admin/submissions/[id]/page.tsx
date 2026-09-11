@@ -129,6 +129,10 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
           <OriginalField label="Additional comments" value={original.additionalComments} />
           <OriginalField label="Media URL" value={original.mediaLink || "(none)"} />
           <OriginalField label="Media Consent" value={original.mediaConsent ? "Yes" : "No"} />
+          <hr style={{ borderColor: 'rgba(242, 234, 219, 0.2)', margin: '12px 0' }} />
+          <OriginalField label="Book / Story Preference" value={original.bookNote || "(none)"} />
+          <OriginalField label="Preferred Attribution" value={original.preferredAttribution ? `${original.attributionPreference === 'custom' ? 'Custom' : original.attributionPreference} — ${original.preferredAttribution}` : original.attributionPreference || "anonymous"} />
+          <OriginalField label="Final Notes" value={original.finalNotes || "(none)"} />
           {media.length > 0 && (
             <div>
               <strong style={{ display: 'block', marginBottom: '12px' }}>Attached Media ({media.length})</strong>

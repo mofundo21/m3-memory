@@ -72,29 +72,36 @@ async function postForm(path, fields, cookie) {
 try {
   await waitForServer();
 
-  const rememberHtml = await (await fetch(`${base}/remember`)).text();
-  assert.match(rememberHtml, /Share a Memory/);
+  // Act I: Scroll experience at /remember
+  const rememberPageHtml = await (await fetch(`${base}/remember`)).text();
+  assert.match(rememberPageHtml, /Crossing Paths|Enter the Memory/i, "Act I scroll narrative should be present");
 
-  const missing = await postForm("/remember", actionFields(rememberHtml));
+  // Act II: Form at /remember/write
+  const writeHtml = await (await fetch(`${base}/remember/write`)).text();
+  assert.match(writeHtml, /Your Memory|The Memory/i, "Act II form should be present");
+
+  const missing = await postForm("/remember/write", actionFields(writeHtml));
   assert.equal(missing.status, 303, "missing required fields should redirect");
-  assert.equal(missing.headers.get("location"), "/remember?error=missing");
+  assert.equal(missing.headers.get("location"), "/remember/write?error=missing");
 
   const longMemory = `Fictional long memory ${"x".repeat(13000)}`;
-  const submit = await postForm("/remember", {
-    ...actionFields(rememberHtml),
-    submitterName: "Fictional River",
-    memoryText: longMemory,
-    eventName: "Imaginary Lantern Night"
-  });
-  assert.equal(submit.status, 303, "valid submission should redirect");
-  assert.equal(submit.headers.get("location"), "/thanks");
+  const writeFormData = actionFields(writeHtml);
+  writeFormData.submitterName = "Fictional River";
+  writeFormData.memoryText = longMemory;
+  writeFormData.eventName = "Imaginary Lantern Night";
 
-  const optionalSubmit = await postForm("/remember", {
-    ...actionFields(await (await fetch(`${base}/remember`)).text()),
-    submitterName: "Fictional Sol",
+  const submit = await postForm("/remember/write", writeFormData);
+  assert.equal(submit.status, 303, "valid Act II submission should redirect to Act III");
+  const finalRedirect = submit.headers.get("location");
+  assert.match(finalRedirect, /\/remember\/final\?submissionId=/, "should redirect to Act III with submission ID");
+
+  const optionalSubmit = await postForm("/remember/write", {
+    ...actionFields(await (await fetch(`${base}/remember/write`)).text()),
+    submitterName: "",
     memoryText: "Fictional optional-fields-omitted memory."
   });
-  assert.equal(optionalSubmit.status, 303, "optional fields may be omitted");
+  assert.equal(optionalSubmit.status, 303, "optional fields (including name) may be omitted");
+  assert.match(optionalSubmit.headers.get("location"), /\/remember\/final\?submissionId=/, "empty name should still redirect to Act III");
 
   // Test media upload: create a tiny 1x1 PNG (89 bytes minimum, created in-memory)
   const pngBytes = Buffer.from([
@@ -109,12 +116,12 @@ try {
     type: "image/png"
   });
 
-  const rememberFormForMedia = actionFields(await (await fetch(`${base}/remember`)).text());
-  const mediaSubmit = await fetch(`${base}/remember`, {
+  const writeFormForMedia = actionFields(await (await fetch(`${base}/remember/write`)).text());
+  const mediaSubmit = await fetch(`${base}/remember/write`, {
     method: "POST",
     body: (() => {
       const formData = new FormData();
-      for (const [key, value] of Object.entries(rememberFormForMedia)) {
+      for (const [key, value] of Object.entries(writeFormForMedia)) {
         formData.set(key, value);
       }
       formData.set("submitterName", "Fictional Media Test");
@@ -125,17 +132,23 @@ try {
     })(),
     redirect: "manual"
   });
-  assert.equal(mediaSubmit.status, 303, "submission with media should redirect");
-  assert.equal(mediaSubmit.headers.get("location"), "/thanks");
+  assert.equal(mediaSubmit.status, 303, "submission with media should redirect to Act III");
+  assert.match(mediaSubmit.headers.get("location"), /\/remember\/final\?submissionId=/, "media submission should redirect to Act III");
 
   const db = new DatabaseSync(dbPath);
-  const submissions = db.prepare("SELECT id, status, original_json, media_consent FROM submissions ORDER BY created_at ASC").all();
+  const submissions = db.prepare("SELECT id, status, original_json, media_consent, attribution_preference, preferred_attribution, book_note, final_notes FROM submissions ORDER BY created_at ASC").all();
   assert.equal(submissions.length, 3);
   assert.equal(submissions[0].status, "UNREVIEWED");
   const originalBefore = JSON.parse(submissions[0].original_json);
   assert.equal(originalBefore.submitterName, "Fictional River");
   assert.equal(originalBefore.memoryText.length, 12000, "long memory is capped at persistence boundary");
   assert.equal(JSON.parse(submissions[1].original_json).eventName, "", "optional fields omitted are stored as empty source fields");
+
+  // Verify Act III preference fields exist (initially null except attribution_preference defaults to 'anonymous')
+  assert.equal(submissions[0].attribution_preference, "anonymous", "attribution_preference defaults to anonymous");
+  assert.equal(submissions[0].preferred_attribution, null, "preferred_attribution is initially null");
+  assert.equal(submissions[0].book_note, null, "book_note is initially null");
+  assert.equal(submissions[0].final_notes, null, "final_notes is initially null");
 
   // Verify media upload test submission
   assert.equal(submissions[2].media_consent, 1, "mediaConsent persists");
