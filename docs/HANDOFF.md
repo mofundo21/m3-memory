@@ -364,3 +364,84 @@ Completed in this session:
 External blocker remains:
 
 - Real Supabase credentials and an allowlisted Supabase Auth admin user are not present in the repo. Production persistence cannot be claimed working until the real Supabase smoke test in `docs/setup/SUPABASE.md` passes.
+
+## Latest Session Update
+
+Real Supabase production-path verification ran with the configured project and fictional smoke-test data only.
+
+Completed:
+
+- Verified `.env.local` contains the six required Supabase runtime variables without printing values.
+- Added and authenticated the project-scoped read-only Supabase MCP server for Codex.
+- Confirmed Supabase connection works and required tables exist.
+- Confirmed production archive tables were empty before testing except `m3_admins`.
+- Confirmed the admin identity is allowlisted.
+- Submitted one clearly fictional memory through the actual `/remember` server-action flow.
+- Confirmed the fictional submission persisted in Supabase.
+- Confirmed anonymous/public Supabase access cannot list or read submissions.
+- Confirmed invalid/unauthorized admin login fails.
+- Confirmed allowlisted admin login works.
+- Confirmed `/admin/submissions` and the fictional submission detail page work.
+- Created a Yeriel review, updated it, and changed status from `APPROVED_FOR_STORY` to `REVIEWED`.
+- Confirmed `submissions.original_json` stayed unchanged after review create and update.
+- Confirmed sign-out redirects to `/admin/login` and protected routes redirect without a session.
+- Confirmed the real service-role value and service-role identifiers are not present in `.next/static`.
+- Ran Tier 3 Claude inspection; no critical/high findings remain.
+- Ran Ponytail review on the small diff: lean already.
+
+Fixes made during verification:
+
+- Reordered `upsertSupabaseReview` parameters so the admin token is the semantic argument and test fetch override is last.
+- Changed Supabase review updates so `PATCH reviews` does not include `submission_id`; insert still includes it. This matches column-scoped Supabase grants and fixed a real 403 on review update.
+- Forced `scripts/v01-smoke-test.mjs` to run in `M3_PERSISTENCE=sqlite` / `M3_ADMIN_AUTH=local` so local regression tests stay isolated even when `.env.local` points at real Supabase.
+- Added a unit regression assertion that review update payloads do not patch `submission_id`.
+
+Validation passed:
+
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build`
+- real Supabase public/admin smoke path through local production server on port 3200
+
+Remaining approval-gated item:
+
+- The fictional Supabase smoke-test submission/person/review rows still exist. Delete only after explicit approval for the exact rows.
+
+## Final Production Readiness Gate (2026-09-11)
+
+Tier 3 Claude inspection completed with verdict: **APPROVED**.
+
+Final gate checks all passed:
+
+- `npm run lint` ✓ (no forbidden references)
+- `npm run typecheck` ✓ (zero type errors)
+- `npm test` ✓ (build + mocked unit tests + SQLite smoke test)
+- `npm run build` ✓ (production build succeeds)
+- Secrets verification ✓ (no SERVICE_ROLE_KEY, SESSION_SECRET, or ADMIN_PASSWORD in .next/static)
+- Real Supabase smoke path ✓ (verified per SUPABASE.md steps 1-9)
+- RLS immutability ✓ (original_json never patched by review operations)
+- Service-role confinement ✓ (server-only import present, key never reaches browser)
+
+Claude Tier 3 findings summary:
+
+- Verdict: **APPROVED** (spec-compliant, all acceptance criteria met)
+- 0 critical or high-severity findings
+- 4 low-severity informational observations (acceptable for V0.1)
+- Coverage verified: auth, RLS, immutability, isolation, token lifecycle, error handling
+
+Production deployment blockers cleared:
+
+- Supabase project created and initialized ✓
+- Admin user allowlisted in m3_admins ✓
+- Environment variables set and verified (values not printed) ✓
+- Schema applied and tables confirmed empty ✓
+- Service-role key never exposed to client ✓
+- RLS policies enforcing allowlist-based admin access ✓
+
+Test data status:
+
+- One fictional `persons` row (created during smoke test)
+- One fictional `submissions` row (created during smoke test)
+- One fictional `reviews` row (created during review create/update test)
+- These rows remain in Supabase until explicit approval for deletion by exact ID

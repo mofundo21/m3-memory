@@ -1,3 +1,4 @@
+import "server-only";
 import type { ReviewInput, SubmissionInput, SubmissionStatus } from "./types";
 
 export type LoginResult = "ok" | "invalid" | "unauthorized" | "expired";
@@ -63,6 +64,12 @@ export function getAdminAuthMode() {
   const explicit = process.env.M3_ADMIN_AUTH;
   if (explicit === "local" || explicit === "supabase") return explicit;
   return hasSupabaseEnv() ? "supabase" : "local";
+}
+
+export function requireCompatibleAuthMode() {
+  if (getPersistenceMode() === "supabase" && getAdminAuthMode() !== "supabase") {
+    throw new Error("SUPABASE_MISCONFIGURED");
+  }
 }
 
 export function getSupabaseConfig(requireServiceRole = true): SupabaseConfig {
@@ -200,7 +207,7 @@ export async function getSupabaseSubmission(id: string, adminToken: string, fetc
   return rows[0] || null;
 }
 
-export async function upsertSupabaseReview(submissionId: string, review: NormalizedReview, fetchImpl: FetchLike = fetch, adminToken?: string | null) {
+export async function upsertSupabaseReview(submissionId: string, review: NormalizedReview, adminToken?: string | null, fetchImpl: FetchLike = fetch) {
   if (!adminToken) throw new Error("UNAUTHENTICATED");
   const config = getSupabaseConfig(false);
   const existing = await request(`${config.url}/rest/v1/reviews?select=id&submission_id=eq.${encodeURIComponent(submissionId)}&limit=1`, {
@@ -209,7 +216,6 @@ export async function upsertSupabaseReview(submissionId: string, review: Normali
   }, fetchImpl) as any[];
 
   const reviewPayload = {
-    submission_id: submissionId,
     notes: review.notes,
     remembered: review.remembered,
     corrections: review.corrections,
@@ -236,7 +242,7 @@ export async function upsertSupabaseReview(submissionId: string, review: Normali
     await request(`${config.url}/rest/v1/reviews`, {
       method: "POST",
       headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
-      body: JSON.stringify(reviewPayload)
+      body: JSON.stringify({ submission_id: submissionId, ...reviewPayload })
     }, fetchImpl);
   }
 

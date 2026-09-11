@@ -336,7 +336,7 @@ export async function upsertReview(submissionId: string, input: ReviewInput, adm
   const review = normalizeReview(input);
 
   if (getPersistenceMode() === "supabase") {
-    await upsertSupabaseReview(submissionId, review, fetch, requireSupabaseAdminToken(adminToken));
+    await upsertSupabaseReview(submissionId, review, requireSupabaseAdminToken(adminToken));
     return;
   }
 

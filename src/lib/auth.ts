@@ -3,7 +3,9 @@ import { cookies } from "next/headers";
 import { createHash, timingSafeEqual } from "node:crypto";
 import {
   getAdminAuthMode,
+  getPersistenceMode,
   isSupabaseAdmin,
+  requireCompatibleAuthMode,
   supabasePasswordLogin,
   verifySupabaseAdminToken,
   type LoginResult
@@ -35,6 +37,7 @@ function isLocalAdminCookie(value?: string) {
 }
 
 export async function getAdminToken() {
+  if (getPersistenceMode() === "supabase") requireCompatibleAuthMode();
   if (getAdminAuthMode() === "local") return null;
   const jar = await cookies();
   const token = jar.get(supabaseCookieName)?.value;
@@ -44,6 +47,7 @@ export async function getAdminToken() {
 }
 
 export async function isAdminAuthenticated() {
+  if (getPersistenceMode() === "supabase") requireCompatibleAuthMode();
   const jar = await cookies();
 
   if (getAdminAuthMode() === "local") {
@@ -56,6 +60,8 @@ export async function isAdminAuthenticated() {
 }
 
 export async function requireAdmin() {
+  if (getPersistenceMode() === "supabase") requireCompatibleAuthMode();
+
   if (getAdminAuthMode() === "local") {
     if (!(await isAdminAuthenticated())) throw new Error("UNAUTHENTICATED");
     return null;
@@ -67,6 +73,8 @@ export async function requireAdmin() {
 }
 
 export async function login(emailOrPassword: string, maybePassword?: string): Promise<LoginResult> {
+  if (getPersistenceMode() === "supabase") requireCompatibleAuthMode();
+
   const jar = await cookies();
 
   if (getAdminAuthMode() === "local") {

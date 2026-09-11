@@ -16,7 +16,7 @@ const args = process.platform === "win32"
   ? ["/d", "/s", "/c", `npm run start -- -p ${port}`]
   : ["run", "start", "--", "-p", String(port)];
 const child = spawn(command, args, {
-  env: { ...process.env, DATABASE_PATH: dbPath, ADMIN_PASSWORD: adminPassword, SESSION_SECRET: sessionSecret },
+  env: { ...process.env, M3_PERSISTENCE: "sqlite", M3_ADMIN_AUTH: "local", DATABASE_PATH: dbPath, ADMIN_PASSWORD: adminPassword, SESSION_SECRET: sessionSecret },
   stdio: ["ignore", "pipe", "pipe"],
   windowsHide: true
 });

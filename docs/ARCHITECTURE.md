@@ -109,3 +109,7 @@ Project AI infrastructure lives under:
 - `config/`
 - `.agents/`
 - `.claude/`
+
+## Verified Supabase Runtime Behavior
+
+The production Supabase path has been verified against the real project with fictional smoke-test data. Public submission creation uses the server-only service role. Admin list/detail/review operations use the allowlisted Supabase Auth user JWT and exercise RLS. Review inserts include `submission_id`; review updates filter by `submission_id` but patch only mutable review fields, preserving column-scoped grants and keeping contributor originals immutable.

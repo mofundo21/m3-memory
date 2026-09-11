@@ -115,7 +115,7 @@
       "label": "walk()",
       "file_type": "code",
       "source_file": "scripts\\supabase-unit-tests.mjs",
-      "source_location": "L159",
+      "source_location": "L187",
       "id": "scripts_supabase_unit_tests_walk",
       "community": 4,
       "norm_label": "walk()"
@@ -912,7 +912,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts\\supabase-unit-tests.mjs",
-      "source_location": "L159",
+      "source_location": "L187",
       "weight": 1.0,
       "_src": "scripts_supabase_unit_tests_mjs",
       "_tgt": "scripts_supabase_unit_tests_walk",

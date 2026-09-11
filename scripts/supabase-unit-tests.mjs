@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
+import { registerHooks } from "node:module";
 import { join } from "node:path";
 
 const originalEnv = { ...process.env };
@@ -8,6 +9,15 @@ process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "fictional-anon-key";
 process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-placeholder";
 process.env.M3_PERSISTENCE = "supabase";
 process.env.M3_ADMIN_AUTH = "supabase";
+
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    if (specifier === "server-only") {
+      return { url: "data:text/javascript,", shortCircuit: true };
+    }
+    return nextResolve(specifier, context);
+  }
+});
 
 const supabase = await import("../src/lib/supabase.ts");
 
@@ -46,6 +56,13 @@ process.env.NEXT_PUBLIC_SUPABASE_URL = "https://fictional-project.supabase.co/";
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "fictional-anon-key";
 process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-placeholder";
 process.env.M3_PERSISTENCE = "supabase";
+process.env.M3_ADMIN_AUTH = "supabase";
+
+{
+  process.env.M3_ADMIN_AUTH = "local";
+  assert.throws(() => supabase.requireCompatibleAuthMode(), /SUPABASE_MISCONFIGURED/);
+  process.env.M3_ADMIN_AUTH = "supabase";
+}
 
 {
   const fetchMock = makeFetch([{ status: 201 }, { status: 201 }]);
@@ -129,12 +146,40 @@ process.env.M3_PERSISTENCE = "supabase";
     chapter_category: null,
     private_notes: null,
     updated_at: "2026-09-10T00:00:00.000Z"
-  }, fetchMock, "admin-user-jwt");
+  }, "admin-user-jwt", fetchMock);
 
   assert.equal(fetchMock.calls.every((call) => call.init.headers.authorization === "Bearer admin-user-jwt"), true);
   const bodies = fetchMock.calls.map((call) => call.init.body && JSON.parse(call.init.body)).filter(Boolean);
   assert.equal(bodies.some((body) => Object.hasOwn(body, "original_json")), false, "review/status writes never send original_json");
   assert.deepEqual(bodies.at(-1), { status: "REVIEWED", updated_at: "2026-09-10T00:00:00.000Z" });
+}
+
+{
+  const fetchMock = makeFetch([
+    { body: [{ id: "existing-review" }] },
+    { status: 200 },
+    { status: 200 }
+  ]);
+  await supabase.upsertSupabaseReview("00000000-0000-4000-8000-000000000003", {
+    status: "REVIEWED",
+    notes: "Updated fictional review",
+    remembered: null,
+    corrections: null,
+    context: null,
+    people: null,
+    tags: null,
+    importance: null,
+    emotional_significance: null,
+    historical_significance: null,
+    accuracy_confidence: null,
+    book_potential: null,
+    chapter_category: null,
+    private_notes: null,
+    updated_at: "2026-09-10T00:00:00.000Z"
+  }, "admin-user-jwt", fetchMock);
+
+  const reviewPatchBody = JSON.parse(fetchMock.calls[1].init.body);
+  assert.equal(Object.hasOwn(reviewPatchBody, "submission_id"), false, "review updates do not patch immutable foreign key");
 }
 
 {

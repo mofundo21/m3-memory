@@ -90,3 +90,25 @@ If Supabase production setup fails before real public launch:
 ## Future Media
 
 The schema has a `media` table, but uploads remain disabled. Before enabling photos, video, or audio, add private storage buckets, file type/size validation, request limits, retrieval authorization, and another Tier 3 review.
+
+## Verified Production Smoke Result
+
+A real Supabase production-path smoke test passed with fictional removable data.
+
+Verified:
+
+- connection and Auth settings endpoint are reachable;
+- required tables exist;
+- archive tables started empty except `m3_admins`;
+- `m3_admins` contains the allowlisted admin identity;
+- `/remember` persists a fictional public submission;
+- anonymous Supabase/PostgREST list/read requests are denied;
+- invalid admin login is rejected;
+- allowlisted Supabase Auth admin can sign in;
+- `/admin/submissions` and `/admin/submissions/[id]` render for the admin;
+- review create, review update, and status changes work through the admin JWT/RLS path;
+- `submissions.original_json` remains unchanged after review operations;
+- sign-out returns to `/admin/login`, and protected routes redirect without a session;
+- the service-role value is not present in built browser assets.
+
+Implementation note: review updates must not patch `reviews.submission_id`; the schema grants update only on mutable review fields. Inserts include `submission_id`, updates use `submission_id` only in the URL filter.

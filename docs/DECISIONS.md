@@ -47,3 +47,9 @@ Reason: Server-side insert with service-role containment is simpler and safer fo
 Decision: Supabase admin list/detail/review operations use the authenticated admin JWT, not the service-role key.
 
 Reason: RLS and column-scoped grants should protect contributor originals even if application code sends a bad admin update payload.
+
+## 2026-09-11: Preserve column-scoped review updates in Supabase
+
+Decision: Supabase review updates must not include `reviews.submission_id` in the PATCH body. Inserts include `submission_id`; updates use it only as the row filter and patch mutable review fields.
+
+Reason: The schema intentionally grants authenticated admins update rights only to review fields and status metadata. A real Supabase smoke test caught a 403 when application code tried to patch `submission_id`, proving the column-scoped grant is working and should remain part of the safety model.

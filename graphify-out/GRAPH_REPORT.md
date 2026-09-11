@@ -1,7 +1,7 @@
 # Graph Report - m3-memory  (2026-09-10)
 
 ## Corpus Check
-- 26 files · ~19,813 words
+- 26 files · ~20,521 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
