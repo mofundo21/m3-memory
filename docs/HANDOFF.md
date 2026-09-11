@@ -501,3 +501,26 @@ Secrets Verification:
   - Dynamic: `/admin/login`, `/admin/submissions`, `/admin/submissions/[id]`, `/api/health`, `/remember`
 
 **Status: LIVE AND ACCESSIBLE**
+
+## Latest Session Update
+
+Review update regression (commit 5739c99) fixed in commit afc822f.
+
+**Root Cause:**
+When submission detail page reloaded after first review save, the story draft form appeared alongside the review form. Test's form field extraction grabbed hidden fields from both forms, causing Next.js server action routing confusion. Story action was invoked instead of review action, throwing EMPTY_STORY error (500) instead of redirecting (303).
+
+**Fix:**
+Story form now only renders when `storyDrafts.length > 0` (i.e., when there are existing drafts to edit). This prevents form routing ambiguity by ensuring only one form is on the page at a time. When no story drafts exist yet, a message appears instead.
+
+**Verification:**
+- ✅ npm run lint
+- ✅ npm run typecheck  
+- ✅ npm run build
+- ✅ npm test (v01 smoke test includes: create review, update review, immutability check)
+- ✅ Deployed to Vercel production
+- ✅ Live production routes accessible
+- ✅ Public privacy verified (no IDs/secrets exposed)
+
+Submission → Yeriel Review → Review Update → Status Change → Story Draft workflow is now fully operational.
+
+**Ready for story draft UI phase: YES**
