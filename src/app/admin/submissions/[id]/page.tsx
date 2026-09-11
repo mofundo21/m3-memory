@@ -5,6 +5,8 @@ import { redirect, notFound } from "next/navigation";
 import { getAdminAuthMode, requireAdmin } from "@/lib/auth";
 import { getSubmission, upsertReview, createStoryDraft, getStoryDrafts } from "@/lib/db";
 import { submissionStatuses, type ReviewInput, type SubmissionStatus } from "@/lib/types";
+import { AdminSidebar } from "@/components/AdminSidebar";
+import { StatusBadge } from "@/components/StatusBadge";
 
 async function saveReview(id: string, formData: FormData) {
   "use server";
@@ -78,20 +80,24 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
   const canCreateStory = submission.status === "REVIEWED" || submission.status === "APPROVED_FOR_STORY";
 
   return (
-    <main className="shell admin-shell">
-      <header className="topbar">
-        <div className="brand">
-          <strong>Submission detail</strong>
-          <span>{submission.id}</span>
-        </div>
-        <Link className="btn" href="/admin/submissions">Back to inbox</Link>
-      </header>
+    <main className="shell">
+      <div className="admin-layout">
+        <AdminSidebar currentPath="/admin/submissions" />
 
-      <div className="split">
-        <section className="panel stack">
+        <div>
+          <header className="topbar" style={{ gridColumn: '1 / 3', marginBottom: '24px' }}>
+            <div className="brand">
+              <strong>Memory Detail</strong>
+              <span>{submission.id.slice(0, 8)}...</span>
+            </div>
+            <Link className="btn" href="/admin/submissions">Back</Link>
+          </header>
+
+          <div className="split">
+        <section className="panel stack" style={{ background: `linear-gradient(135deg, var(--paper) 0%, rgba(242, 234, 219, 0.05) 100%)`, borderColor: 'rgba(242, 234, 219, 0.2)' }}>
           <div>
-            <h2>Contributor Original</h2>
-            <p className="notice">Immutable source layer. Review notes and corrections belong on the right.</p>
+            <h2 style={{ color: '#2B2824' }}>🔒 Contributor Original</h2>
+            <p className="notice" style={{ background: 'rgba(242, 234, 219, 0.05)', borderColor: 'rgba(242, 234, 219, 0.2)', color: '#2B2824' }}>Immutable source layer. This record cannot be edited.</p>
           </div>
           <OriginalField label="Name" value={original.submitterName} />
           <OriginalField label="Contact" value={original.contact} />
@@ -114,10 +120,11 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
           <OriginalField label="What Yeriel may not remember" value={original.forgottenPrompt} />
           <OriginalField label="Book page prompt" value={original.bookPagePrompt} />
           <OriginalField label="Additional comments" value={original.additionalComments} />
+          <p className="micro-note" style={{ fontSize: '11px', textAlign: 'right', color: 'var(--muted)', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(242, 234, 219, 0.2)' }}>ORIGINAL SOURCE — UNEDITED</p>
         </section>
 
-        <form action={saveReview.bind(null, id)} className="panel grid">
-          <h2>Yeriel Review</h2>
+        <form action={saveReview.bind(null, id)} className="panel grid" style={{ background: `linear-gradient(135deg, rgba(184, 155, 255, 0.05) 0%, var(--surface-2) 100%)` }}>
+          <h2 style={{ color: 'var(--purple-soft)' }}>Yeriel Review</h2>
           <input type="hidden" name="action" value="saveReview" />
           <div className="field">
             <label>Status</label>
@@ -147,8 +154,11 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
       </div>
 
       {canCreateStory && storyDrafts.length > 0 && (
-        <section className="panel grid" style={{ marginTop: "24px" }}>
-          <h2>Story Draft</h2>
+        <section className="panel grid" style={{ marginTop: "24px", gridColumn: '2 / 3' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <h2 style={{ margin: '0' }}>Story Draft</h2>
+            <span style={{ fontSize: '11px', background: 'rgba(159, 124, 255, 0.2)', color: 'var(--purple-soft)', padding: '4px 8px', borderRadius: '4px', fontWeight: '600' }}>AI-GENERATED</span>
+          </div>
           <form action={createStory.bind(null, id)} className="grid">
             <input type="hidden" name="action" value="updateStory" />
             <div className="field">
@@ -168,18 +178,20 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
       )}
 
       {canCreateStory && storyDrafts.length === 0 && (
-        <section className="panel" style={{ marginTop: "24px" }}>
+        <section className="panel" style={{ marginTop: "24px", gridColumn: '2 / 3' }}>
           <h2>Story Draft</h2>
-          <p className="muted">Story generation available. Refresh or return to inbox and reopen this submission to create a story draft.</p>
+          <p className="muted">AI story generation coming soon. Story drafts let you turn memories into narrative.</p>
         </section>
       )}
 
       {!canCreateStory && (
-        <section className="panel" style={{ marginTop: "24px" }}>
+        <section className="panel" style={{ marginTop: "24px", gridColumn: '2 / 3' }}>
           <h2>Story Draft</h2>
           <p className="muted">Story generation is available after review is marked as REVIEWED or APPROVED_FOR_STORY.</p>
         </section>
       )}
+        </div>
+      </div>
     </main>
   );
 }

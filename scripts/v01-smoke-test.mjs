@@ -72,7 +72,7 @@ try {
   await waitForServer();
 
   const rememberHtml = await (await fetch(`${base}/remember`)).text();
-  assert.match(rememberHtml, /Tell me the part only you remember/);
+  assert.match(rememberHtml, /Share a Memory/);
 
   const missing = await postForm("/remember", actionFields(rememberHtml));
   assert.equal(missing.status, 303, "missing required fields should redirect");

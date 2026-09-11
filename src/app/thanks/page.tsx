@@ -4,12 +4,18 @@ export default function ThanksPage() {
   return (
     <main className="memory-shell center-shell">
       <section className="memory-card thanks-card">
-        <p className="kicker">Memory received</p>
-        <h1>Thank you for leaving this with me.</h1>
+        <h1 style={{ marginBottom: '12px' }}>Thank you.</h1>
+        <p className="handwritten" style={{ textAlign: 'center', marginBottom: '24px' }}>You're now part of the story.</p>
         <p>
-          Your original submission was saved privately for Yeriel / MOFUNDO to review. It is not public and it is not story material until a separate review happens.
+          Your memory has been added to the private M3 Memory archive. Every memory helps reconnect people, places, and moments that might otherwise disappear.
         </p>
-        <Link className="primary-action" href="/remember">Share another memory</Link>
+        <p className="micro-note">
+          Your original words are preserved exactly as you submitted them. This version is private until Yeriel reviews it and decides if it belongs in a story.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <Link className="btn primary" href="/remember">Share Another Memory</Link>
+          <Link className="btn" href="/">Return Home</Link>
+        </div>
       </section>
     </main>
   );

@@ -39,6 +39,8 @@ export type SubmissionInput = {
   forgottenPrompt?: string;
   bookPagePrompt?: string;
   additionalComments?: string;
+  mediaLink?: string;
+  mediaConsent?: boolean;
 };
 
 export type ReviewInput = {

@@ -47,6 +47,8 @@ function getDb() {
       region TEXT,
       country TEXT,
       event_name TEXT,
+      media_link TEXT,
+      media_consent INTEGER NOT NULL DEFAULT 0,
       status TEXT NOT NULL DEFAULT 'UNREVIEWED',
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
@@ -104,6 +106,18 @@ function getDb() {
       FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
     );
   `);
+
+  // Ensure media columns exist (additive, safe to run multiple times)
+  try {
+    db.exec("ALTER TABLE submissions ADD COLUMN media_link TEXT");
+  } catch {
+    // Column already exists, safe to ignore
+  }
+  try {
+    db.exec("ALTER TABLE submissions ADD COLUMN media_consent INTEGER NOT NULL DEFAULT 0");
+  } catch {
+    // Column already exists, safe to ignore
+  }
 
   return db;
 }
@@ -164,7 +178,9 @@ function normalizeSubmission(input: SubmissionInput): NormalizedSubmission {
     artifactInfo: text(input.artifactInfo, 4000),
     forgottenPrompt: text(input.forgottenPrompt, 4000),
     bookPagePrompt: text(input.bookPagePrompt, 4000),
-    additionalComments: text(input.additionalComments, 4000)
+    additionalComments: text(input.additionalComments, 4000),
+    mediaLink: text(input.mediaLink, 500),
+    mediaConsent: Boolean(input.mediaConsent)
   };
 
   return {
@@ -228,8 +244,9 @@ export async function createSubmission(input: SubmissionInput) {
     INSERT INTO submissions (
       id, submitter_person_id, original_json, memory_preview, encounter_date,
       is_approximate_date, location_name, city, region, country, event_name,
+      media_link, media_consent,
       status, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'UNREVIEWED', ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'UNREVIEWED', ?, ?)
   `).run(
     record.id,
     record.personId,
@@ -242,6 +259,8 @@ export async function createSubmission(input: SubmissionInput) {
     record.region,
     record.country,
     record.eventName,
+    record.original.mediaLink || null,
+    record.original.mediaConsent ? 1 : 0,
     record.createdAt,
     record.createdAt
   );

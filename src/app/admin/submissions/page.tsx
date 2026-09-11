@@ -4,6 +4,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminAuthMode, requireAdmin, logout } from "@/lib/auth";
 import { listSubmissions } from "@/lib/db";
+import { AdminSidebar } from "@/components/AdminSidebar";
+import { StatusBadge } from "@/components/StatusBadge";
 
 async function logoutAction() {
   "use server";
@@ -12,7 +14,7 @@ async function logoutAction() {
 }
 
 function place(item: any) {
-  return [item.eventName, item.locationName, item.city, item.region, item.country].filter(Boolean).join(" / ") || "No place added";
+  return [item.eventName, item.locationName, item.city, item.region, item.country].filter(Boolean).join(" / ") || "No place";
 }
 
 export default async function AdminSubmissionsPage() {
@@ -25,35 +27,41 @@ export default async function AdminSubmissionsPage() {
   const submissions = await listSubmissions(adminToken) as any[];
 
   return (
-    <main className="shell admin-shell">
-      <header className="topbar">
-        <div className="brand">
-          <strong>Memory inbox</strong>
-          <span>{submissions.length} private submissions</span>
-        </div>
-        <div className="actions">
-          <Link className="btn" href="/">Public page</Link>
-          <form action={logoutAction}>
-            <button className="btn" type="submit">Sign out</button>
-          </form>
-        </div>
-      </header>
+    <main className="shell">
+      <div className="admin-layout">
+        <AdminSidebar currentPath="/admin/submissions" />
 
-      <section className="inbox">
-        {submissions.length === 0 ? (
-          <div className="panel muted">No submissions yet. The production archive starts empty.</div>
-        ) : submissions.map((item) => (
-          <Link className="row rich-row" key={item.id} href={`/admin/submissions/${item.id}`}>
-            <span className="status">{item.status}</span>
-            <span className="row-main">
-              <strong>{item.submitterName || "Anonymous contributor"}</strong>
-              <span className="muted">{item.memoryPreview || "No preview"}</span>
-              <span className="row-meta">{item.encounterDate || "No date"} · {place(item)}</span>
-            </span>
-            <span className="muted">{new Date(item.createdAt).toLocaleString()}</span>
-          </Link>
-        ))}
-      </section>
+        <div>
+          <header className="topbar" style={{ gridColumn: '1 / 3', marginBottom: '24px' }}>
+            <div className="brand">
+              <strong>Submissions</strong>
+              <span>{submissions.length} memories</span>
+            </div>
+            <div className="actions">
+              <Link className="btn" href="/">Public</Link>
+              <form action={logoutAction}>
+                <button className="btn" type="submit">Sign out</button>
+              </form>
+            </div>
+          </header>
+
+          <section className="inbox">
+            {submissions.length === 0 ? (
+              <div className="panel" style={{ color: 'var(--muted)' }}>No submissions yet. The production archive starts empty.</div>
+            ) : submissions.map((item) => (
+              <Link className="row rich-row" key={item.id} href={`/admin/submissions/${item.id}`}>
+                <StatusBadge status={item.status} />
+                <span className="row-main">
+                  <strong>{item.submitterName || "Anonymous"}</strong>
+                  <span className="muted">{item.memoryPreview || "No preview"}</span>
+                  <span className="row-meta">{item.encounterDate || "No date"} · {place(item)}</span>
+                </span>
+                <span className="muted" style={{ fontSize: '13px' }}>{new Date(item.createdAt).toLocaleString()}</span>
+              </Link>
+            ))}
+          </section>
+        </div>
+      </div>
     </main>
   );
 }

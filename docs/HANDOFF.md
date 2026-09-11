@@ -1,8 +1,62 @@
 # M3 Memory Handoff
 
-Date: 2026-09-10
+Date: 2026-09-11
 Owner: YERIEL AKA MOFUNDO
 Repository: `C:\Users\yerie\m3-memory`
+
+## Latest Session Update
+
+Full UI/UX Experience Pass — complete & tested.
+
+**What was delivered:**
+
+Design System (complete rewrite of `src/app/globals.css`):
+- Color tokens: dark cinematic background (#0B1012), warm cream paper (#F2EADB), violet accents (#B89BFF–#D3C2FF), status colors (success/warning/danger)
+- Fonts via Google CDN: Playfair Display (serif), Inter (sans), Caveat (script)
+- Radii scale: 8/12/16px
+- Button minimum 44px tap height
+- Accessibility: focus rings, prefers-reduced-motion, semantic headings
+
+Public Pages:
+- `/` (landing): Two-column hero + Polaroid gallery strip with demo cards
+- `/remember`: Progressive 4-section form (THE MEMORY → DETAILS → MORE TO TELL → MEDIA & CONSENT) with Memory Guide intro
+- `/thanks`: Handwritten accent, two action buttons, no data leakage
+
+Components (new in `src/components/`):
+- `PolaroidCard.tsx`: Cream frame, random rotation, caption label
+- `PhotoPlaceholder.tsx`: Gradient placeholder for missing images
+- `StatusBadge.tsx`: Colored pill badges (never color-only)
+- `AdminSidebar.tsx`: Left nav with Archive/Submissions/Settings; unbuilt sections disabled "Coming Soon"
+- `SubmissionsFilter.tsx`: Client-side search (created but removed from v1 to reduce complexity)
+
+Admin Pages:
+- `/admin/submissions`: Inbox with AdminSidebar, StatusBadge per row, restyled cards
+- `/admin/submissions/[id]`: Cream "Contributor Original" card + violet Review card + Story Draft UI
+- `/admin/archive` (new): Demo gallery with Polaroid cards + "Coming soon" messaging
+
+Database Updates (additive only):
+- Added `mediaLink` (TEXT, nullable) and `mediaConsent` (INTEGER, default 0) to submissions
+- SQLite: CREATE TABLE IF NOT EXISTS + safe ALTER TABLE guards
+- Supabase schema.sql: already included both columns
+- No mutations to `original_json`; immutability preserved
+
+Test Results:
+- ✅ npm run lint (no forbidden references)
+- ✅ npm run typecheck (zero type errors)
+- ✅ npm run build (production build succeeds)
+- ✅ npm test (v01 smoke test passes: form submission, admin access, immutability)
+
+Files Changed: 12 modified + 2 new directories
+- Modified: 12 files (7 page/component tsx, 1 CSS, 2 lib files, 1 schema, 1 test)
+- New: src/app/admin/archive/, src/components/
+
+Secrets & Security:
+- ✅ No .env files in diff
+- ✅ No credentials/passwords/tokens in diff
+- ✅ No SERVICE_ROLE_KEY exposed
+- ✅ Schema backward-compatible, all existing rows preserved
+
+---
 
 ## Latest Session Update
 

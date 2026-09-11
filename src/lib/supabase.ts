@@ -189,6 +189,8 @@ export async function createSupabaseSubmission(record: NormalizedSubmission, fet
       region: record.region,
       country: record.country,
       event_name: record.eventName,
+      media_link: record.original.mediaLink || null,
+      media_consent: record.original.mediaConsent || false,
       status: "UNREVIEWED",
       created_at: record.createdAt,
       updated_at: record.createdAt
