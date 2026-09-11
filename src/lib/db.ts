@@ -16,6 +16,7 @@ import {
   uploadSupabaseMedia,
   insertSupabaseMediaRows,
   getSupabaseSubmissionMedia,
+  updateSupabaseSubmissionPreferences,
   type NormalizedReview,
   type NormalizedSubmission
 } from "./supabase";
@@ -121,6 +122,27 @@ function getDb() {
   } catch {
     // Column already exists, safe to ignore
   }
+  // Ensure Act III preference columns exist (additive, safe to run multiple times)
+  try {
+    db.exec("ALTER TABLE submissions ADD COLUMN attribution_preference TEXT DEFAULT 'anonymous'");
+  } catch {
+    // Column already exists, safe to ignore
+  }
+  try {
+    db.exec("ALTER TABLE submissions ADD COLUMN preferred_attribution TEXT");
+  } catch {
+    // Column already exists, safe to ignore
+  }
+  try {
+    db.exec("ALTER TABLE submissions ADD COLUMN book_note TEXT");
+  } catch {
+    // Column already exists, safe to ignore
+  }
+  try {
+    db.exec("ALTER TABLE submissions ADD COLUMN final_notes TEXT");
+  } catch {
+    // Column already exists, safe to ignore
+  }
 
   return db;
 }
@@ -183,7 +205,11 @@ function normalizeSubmission(input: SubmissionInput): NormalizedSubmission {
     bookPagePrompt: text(input.bookPagePrompt, 4000),
     additionalComments: text(input.additionalComments, 4000),
     mediaLink: text(input.mediaLink, 500),
-    mediaConsent: Boolean(input.mediaConsent)
+    mediaConsent: Boolean(input.mediaConsent),
+    attributionPreference: input.attributionPreference || "anonymous",
+    preferredAttribution: optionalText(input.preferredAttribution, 240),
+    bookNote: optionalText(input.bookNote, 4000),
+    finalNotes: optionalText(input.finalNotes, 4000)
   };
 
   return {
@@ -543,4 +569,40 @@ export async function getSubmissionMedia(submissionId: string, adminToken?: stri
 
   const db = getDb();
   return (db.prepare("SELECT id, file_name, mime_type, storage_path, size_bytes, created_at FROM media WHERE submission_id = ? ORDER BY created_at ASC").all(submissionId) as any[]) || [];
+}
+
+// Act III preference update (PATCH) — lightweight, does not touch original_json or media
+export interface Act3UpdateInput {
+  attributionPreference?: string;
+  preferredAttribution?: string;
+  bookNote?: string;
+  finalNotes?: string;
+}
+
+export async function updateSubmissionPreferences(submissionId: string, input: Act3UpdateInput, adminToken?: string | null) {
+  if (getPersistenceMode() === "supabase") {
+    const token = requireSupabaseAdminToken(adminToken);
+    await updateSupabaseSubmissionPreferences(submissionId, input, token);
+    return;
+  }
+
+  const db = getDb();
+  const updatedAt = now();
+
+  db.prepare(`
+    UPDATE submissions SET
+      attribution_preference = ?,
+      preferred_attribution = ?,
+      book_note = ?,
+      final_notes = ?,
+      updated_at = ?
+    WHERE id = ?
+  `).run(
+    input.attributionPreference || "anonymous",
+    optionalText(input.preferredAttribution, 240),
+    optionalText(input.bookNote, 4000),
+    optionalText(input.finalNotes, 4000),
+    updatedAt,
+    submissionId
+  );
 }

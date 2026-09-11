@@ -344,3 +344,22 @@ export async function getSupabaseSubmissionMedia(submissionId: string, adminToke
 function sanitizeFileName(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 200);
 }
+
+export async function updateSupabaseSubmissionPreferences(submissionId: string, preferences: { attributionPreference?: string; preferredAttribution?: string; bookNote?: string; finalNotes?: string }, adminToken: string, fetchImpl: FetchLike = fetch) {
+  const config = getSupabaseConfig(false);
+  const updatedAt = new Date().toISOString();
+
+  const payload = {
+    attribution_preference: preferences.attributionPreference || "anonymous",
+    preferred_attribution: preferences.preferredAttribution || null,
+    book_note: preferences.bookNote || null,
+    final_notes: preferences.finalNotes || null,
+    updated_at: updatedAt
+  };
+
+  await request(`${config.url}/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, {
+    method: "PATCH",
+    headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
+    body: JSON.stringify(payload)
+  }, fetchImpl);
+}

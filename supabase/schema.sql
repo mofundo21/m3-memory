@@ -32,6 +32,10 @@ create table if not exists public.submissions (
   event_name text,
   media_link text,
   media_consent boolean not null default false,
+  attribution_preference text default 'anonymous',
+  preferred_attribution text,
+  book_note text,
+  final_notes text,
   status text not null default 'UNREVIEWED' check (status in ('UNREVIEWED', 'IN_REVIEW', 'REVIEWED', 'APPROVED_FOR_STORY', 'REJECTED', 'ARCHIVED')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

@@ -15,6 +15,8 @@ export const submissionStatuses = [
   "ARCHIVED"
 ] as const satisfies readonly SubmissionStatus[];
 
+export type AttributionPreference = "first_name" | "full_name" | "nickname" | "artist_name" | "initials" | "anonymous" | "custom";
+
 export type SubmissionInput = {
   submitterName: string;
   contact?: string;
@@ -41,6 +43,10 @@ export type SubmissionInput = {
   additionalComments?: string;
   mediaLink?: string;
   mediaConsent?: boolean;
+  attributionPreference?: AttributionPreference;
+  preferredAttribution?: string;
+  bookNote?: string;
+  finalNotes?: string;
 };
 
 export type ReviewInput = {
