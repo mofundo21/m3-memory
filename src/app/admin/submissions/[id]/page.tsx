@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { getAdminAuthMode, requireAdmin } from "@/lib/auth";
-import { getSubmission, upsertReview } from "@/lib/db";
+import { getSubmission, upsertReview, createStoryDraft, getStoryDrafts } from "@/lib/db";
 import { submissionStatuses, type ReviewInput, type SubmissionStatus } from "@/lib/types";
 
 async function saveReview(id: string, formData: FormData) {
@@ -31,6 +31,21 @@ async function saveReview(id: string, formData: FormData) {
   redirect(`/admin/submissions/${id}`);
 }
 
+async function createStory(id: string, formData: FormData) {
+  "use server";
+  const adminToken = await requireAdmin();
+
+  const title = String(formData.get("storyTitle") || "AI-GENERATED DRAFT");
+  const body = String(formData.get("storyBody") || "");
+
+  if (!body.trim()) {
+    throw new Error("EMPTY_STORY");
+  }
+
+  await createStoryDraft(id, title, body, adminToken);
+  redirect(`/admin/submissions/${id}`);
+}
+
 function OriginalField({ label, value }: { label: string; value: unknown }) {
   return (
     <div className="original-field">
@@ -52,6 +67,15 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
   if (!submission) notFound();
   const original = submission.original;
   const review = submission.review || {};
+
+  let storyDrafts: any[] = [];
+  try {
+    storyDrafts = await getStoryDrafts(id, adminToken) as any[];
+  } catch (e) {
+    console.error("Failed to load story drafts:", e);
+  }
+
+  const canCreateStory = submission.status === "REVIEWED" || submission.status === "APPROVED_FOR_STORY";
 
   return (
     <main className="shell admin-shell">
@@ -117,11 +141,36 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
           <div className="field"><label>Private notes</label><textarea name="privateNotes" defaultValue={review.private_notes || ""} /></div>
           <div className="actions">
             <button className="btn primary" type="submit">Save review</button>
-            <button className="btn" type="button" disabled>Create story</button>
           </div>
-          <p className="muted">Story generation is disabled until reviewed material and writing rules are ready.</p>
         </form>
       </div>
+
+      {canCreateStory && (
+        <section className="panel grid" style={{ marginTop: "24px" }}>
+          <h2>Story Draft</h2>
+          <form action={createStory.bind(null, id)} className="grid">
+            <div className="field">
+              <label>Title</label>
+              <input name="storyTitle" defaultValue={storyDrafts[0]?.label || "AI-GENERATED DRAFT"} />
+            </div>
+            <div className="field">
+              <label>Draft body</label>
+              <textarea name="storyBody" placeholder="Generated narrative, based on original and review..." defaultValue={storyDrafts[0]?.draft_text || ""} />
+            </div>
+            <div className="actions">
+              <button className="btn primary" type="submit">{storyDrafts[0] ? "Update story" : "Create story"}</button>
+            </div>
+            <p className="muted">AI-generated narrative. Preserve contributor original and Yeriel review as separate layers.</p>
+          </form>
+        </section>
+      )}
+
+      {!canCreateStory && (
+        <section className="panel" style={{ marginTop: "24px" }}>
+          <h2>Story Draft</h2>
+          <p className="muted">Story generation is available after review is marked as REVIEWED or APPROVED_FOR_STORY.</p>
+        </section>
+      )}
     </main>
   );
 }

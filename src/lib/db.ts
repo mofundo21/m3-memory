@@ -403,3 +403,60 @@ export async function upsertReview(submissionId: string, input: ReviewInput, adm
     submissionId
   );
 }
+
+export async function createStoryDraft(submissionId: string, label: string, draftText: string, adminToken?: string | null) {
+  if (getPersistenceMode() === "supabase") {
+    requireSupabaseAdminToken(adminToken);
+    // TODO: implement Supabase story draft creation
+    return randomUUID();
+  }
+
+  const db = getDb();
+  const draftId = randomUUID();
+  const createdAt = now();
+
+  db.prepare(`
+    INSERT INTO story_drafts (
+      id, submission_id, label, draft_text, created_at
+    ) VALUES (?, ?, ?, ?, ?)
+  `).run(
+    draftId,
+    submissionId,
+    label,
+    draftText,
+    createdAt
+  );
+
+  return draftId;
+}
+
+export async function getStoryDrafts(submissionId: string, adminToken?: string | null) {
+  if (getPersistenceMode() === "supabase") {
+    requireSupabaseAdminToken(adminToken);
+    // TODO: implement Supabase story draft retrieval
+    return [];
+  }
+
+  const db = getDb();
+  return (db.prepare("SELECT * FROM story_drafts WHERE submission_id = ? ORDER BY created_at DESC").all(submissionId) as any[]) || [];
+}
+
+export async function updateStoryDraft(draftId: string, label: string, draftText: string, adminToken?: string | null) {
+  if (getPersistenceMode() === "supabase") {
+    requireSupabaseAdminToken(adminToken);
+    // TODO: implement Supabase story draft update
+    return;
+  }
+
+  const db = getDb();
+  const updatedAt = now();
+
+  db.prepare(`
+    UPDATE story_drafts SET label = ?, draft_text = ?, created_at = ? WHERE id = ?
+  `).run(
+    label,
+    draftText,
+    updatedAt,
+    draftId
+  );
+}
