@@ -578,3 +578,39 @@ Story form now only renders when `storyDrafts.length > 0` (i.e., when there are 
 Submission → Yeriel Review → Review Update → Status Change → Story Draft workflow is now fully operational.
 
 **Ready for story draft UI phase: YES**
+
+## UI Phase Complete (2026-09-11)
+
+**Memory Guide & Form Finalization**
+
+All 4 sections of `/remember` form are production-ready and match HANDOFF.md documentation:
+1. **THE MEMORY** — submitter name, contact, core memory text (non-empty required)
+2. **DETAILS** — encounter date (approximate toggle), location, event name
+3. **MORE TO TELL** — 11 free-text prompt fields for enrichment
+4. **MEDIA & CONSENT** — external media URL field (`mediaLink`) + consent checkbox; file uploads remain deferred
+
+**Production Schema Compatibility Confirmed**
+
+- Supabase `schema.sql`: columns `media_link` (TEXT, nullable) and `media_consent` (BOOLEAN, default false) already present on `submissions` table (lines 33–34)
+- SQLite `src/lib/db.ts`: identical schema present (lines 50–51) with safe additive ALTER TABLE guards for backward compatibility (lines 112–117)
+- Media table present in both environments: id, submission_id, file_name, mime_type, storage_path, size_bytes, created_at
+- **No further schema migration required** — columns are production-ready
+
+**Admin Archive Page Status — Placeholder/Demo**
+
+`/admin/archive` (at `src/app/admin/archive/page.tsx`) is currently a **UI shell with demo data only**:
+- Renders hardcoded `demoMemories` array (4 fake titles)
+- Search input disabled ("Coming soon...")
+- **Does NOT query** submissions with `status = 'ARCHIVED'` against the database
+- No real queries wired; clearly labeled as "Demo data - development only"
+- Next phase: replace demo data with actual `ARCHIVED` submission query once upload/review workflow reaches archive-worthy status
+
+**Gate Verification (2026-09-11)**
+
+- ✅ `npm run lint` — no forbidden references
+- ✅ `npm run typecheck` — zero type errors
+- ✅ `npm run build` — production build succeeded
+- ✅ `npm test` — mocked unit tests + SQLite smoke test passed
+- ✅ `git status` — working tree clean (no secrets, .env, or unrelated changes staged)
+
+Ready for V0.2 Milestone 1 (secure small image uploads).
