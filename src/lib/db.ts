@@ -155,9 +155,9 @@ function text(value: string | undefined, max = 4000) {
   return (value || "").trim().slice(0, max);
 }
 
-function optionalText(value: string | undefined, max = 4000) {
+function optionalText(value: string | undefined, max = 4000): string | undefined {
   const cleaned = text(value, max);
-  return cleaned || null;
+  return cleaned || undefined;
 }
 
 function rating(value: number | undefined): number | null {
