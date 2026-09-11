@@ -1,9 +1,11 @@
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
-import { createSubmission } from "@/lib/db";
+import { createSubmission, insertMediaRows, validateMediaUpload } from "@/lib/db";
+import { uploadSupabaseMedia, getPersistenceMode } from "@/lib/supabase";
 import type { SubmissionInput } from "@/lib/types";
 import { SubmitMemoryButton } from "./SubmitMemoryButton";
+import { MediaPicker } from "./MediaPicker";
 
 async function submitMemory(formData: FormData) {
   "use server";
@@ -40,7 +42,44 @@ async function submitMemory(formData: FormData) {
     redirect("/remember?error=missing");
   }
 
-  await createSubmission(input);
+  const submissionId = await createSubmission(input);
+
+  const mediaFiles = formData.getAll("media") as File[];
+  if (mediaFiles.length > 0) {
+    try {
+      const validationInputs = await Promise.all(
+        mediaFiles.map(async (file) => ({
+          fileName: file.name,
+          mimeType: file.type,
+          sizeBytes: file.size,
+          file,
+        }))
+      );
+
+      validateMediaUpload(validationInputs);
+
+      const uploadedFiles = [];
+      for (const { file, mimeType } of validationInputs) {
+        const buffer = await file.arrayBuffer();
+        const storagePath =
+          getPersistenceMode() === "supabase"
+            ? await uploadSupabaseMedia(submissionId, file.name, new Uint8Array(buffer), mimeType)
+            : `submissions/${submissionId}/${Math.random().toString(36).slice(2)}-${file.name}`;
+
+        uploadedFiles.push({
+          fileName: file.name,
+          mimeType,
+          sizeBytes: file.size,
+          storagePath,
+        });
+      }
+
+      await insertMediaRows(submissionId, uploadedFiles);
+    } catch (error) {
+      redirect(`/remember?error=media&submissionId=${submissionId}`);
+    }
+  }
+
   redirect("/thanks");
 }
 
@@ -158,6 +197,7 @@ export default async function RememberPage({ searchParams }: { searchParams?: Pr
         {/* SECTION 4: MEDIA & EXTRAS */}
         <div className="prompt-group">
           <p className="kicker">Media & Consent</p>
+          <MediaPicker />
           <div className="field">
             <label>Links to photos, video, or audio</label>
             <input name="mediaLink" placeholder="Google Drive, Google Photos, Dropbox, YouTube, etc." maxLength={500} />

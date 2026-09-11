@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { getAdminAuthMode, requireAdmin } from "@/lib/auth";
-import { getSubmission, upsertReview, createStoryDraft, getStoryDrafts } from "@/lib/db";
+import { getSubmission, upsertReview, createStoryDraft, getStoryDrafts, getSubmissionMedia } from "@/lib/db";
 import { submissionStatuses, type ReviewInput, type SubmissionStatus } from "@/lib/types";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -77,6 +77,13 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
     console.error("Failed to load story drafts:", e);
   }
 
+  let media: any[] = [];
+  try {
+    media = await getSubmissionMedia(id, adminToken) as any[];
+  } catch (e) {
+    console.error("Failed to load media:", e);
+  }
+
   const canCreateStory = submission.status === "REVIEWED" || submission.status === "APPROVED_FOR_STORY";
 
   return (
@@ -120,6 +127,52 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
           <OriginalField label="What Yeriel may not remember" value={original.forgottenPrompt} />
           <OriginalField label="Book page prompt" value={original.bookPagePrompt} />
           <OriginalField label="Additional comments" value={original.additionalComments} />
+          <OriginalField label="Media URL" value={original.mediaLink || "(none)"} />
+          <OriginalField label="Media Consent" value={original.mediaConsent ? "Yes" : "No"} />
+          {media.length > 0 && (
+            <div>
+              <strong style={{ display: 'block', marginBottom: '12px' }}>Attached Media ({media.length})</strong>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', marginTop: '12px' }}>
+                {media.map((m: any) => (
+                  <div key={m.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <a
+                      href={`/admin/media/${m.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        aspectRatio: '1',
+                        background: 'var(--bg-soft)',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(0, 0, 0, 0.1)',
+                      }}
+                    >
+                      {m.mime_type?.startsWith('image/') ? (
+                        <img
+                          src={`/admin/media/${m.id}`}
+                          alt={m.file_name}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: '12px', color: 'var(--muted)' }}>
+                          📄
+                        </div>
+                      )}
+                    </a>
+                    <div style={{ fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={m.file_name}>
+                      {m.file_name}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <p className="micro-note" style={{ fontSize: '11px', textAlign: 'right', color: 'var(--muted)', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(242, 234, 219, 0.2)' }}>ORIGINAL SOURCE — UNEDITED</p>
         </section>
 
