@@ -118,6 +118,7 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
 
         <form action={saveReview.bind(null, id)} className="panel grid">
           <h2>Yeriel Review</h2>
+          <input type="hidden" name="action" value="saveReview" />
           <div className="field">
             <label>Status</label>
             <select name="status" defaultValue={submission.status}>
@@ -145,23 +146,31 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
         </form>
       </div>
 
-      {canCreateStory && (
+      {canCreateStory && storyDrafts.length > 0 && (
         <section className="panel grid" style={{ marginTop: "24px" }}>
           <h2>Story Draft</h2>
           <form action={createStory.bind(null, id)} className="grid">
+            <input type="hidden" name="action" value="updateStory" />
             <div className="field">
               <label>Title</label>
-              <input name="storyTitle" defaultValue={storyDrafts[0]?.label || "AI-GENERATED DRAFT"} />
+              <input name="storyTitle" defaultValue={storyDrafts[0].label} />
             </div>
             <div className="field">
               <label>Draft body</label>
-              <textarea name="storyBody" placeholder="Generated narrative, based on original and review..." defaultValue={storyDrafts[0]?.draft_text || ""} />
+              <textarea name="storyBody" placeholder="Generated narrative, based on original and review..." defaultValue={storyDrafts[0].draft_text} />
             </div>
             <div className="actions">
-              <button className="btn primary" type="submit">{storyDrafts[0] ? "Update story" : "Create story"}</button>
+              <button className="btn primary" type="submit">Update story</button>
             </div>
             <p className="muted">AI-generated narrative. Preserve contributor original and Yeriel review as separate layers.</p>
           </form>
+        </section>
+      )}
+
+      {canCreateStory && storyDrafts.length === 0 && (
+        <section className="panel" style={{ marginTop: "24px" }}>
+          <h2>Story Draft</h2>
+          <p className="muted">Story generation available. Refresh or return to inbox and reopen this submission to create a story draft.</p>
         </section>
       )}
 
