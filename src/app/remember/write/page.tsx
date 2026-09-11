@@ -46,7 +46,7 @@ async function submitMemory(formData: FormData) {
 
   // Handle media upload (files live only in component state, uploaded here)
   const mediaFiles = formData.getAll("media") as File[];
-  if (mediaFiles.length > 0) {
+  if (mediaFiles.length > 0 && getPersistenceMode() === "supabase") {
     try {
       const validationInputs = await Promise.all(
         mediaFiles.map(async (file) => ({

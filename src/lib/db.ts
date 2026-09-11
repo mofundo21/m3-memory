@@ -207,9 +207,9 @@ function normalizeSubmission(input: SubmissionInput): NormalizedSubmission {
     mediaLink: text(input.mediaLink, 500),
     mediaConsent: Boolean(input.mediaConsent),
     attributionPreference: input.attributionPreference || "anonymous",
-    preferredAttribution: optionalText(input.preferredAttribution, 240),
-    bookNote: optionalText(input.bookNote, 4000),
-    finalNotes: optionalText(input.finalNotes, 4000)
+    preferredAttribution: text(input.preferredAttribution, 240) || undefined,
+    bookNote: text(input.bookNote, 4000) || undefined,
+    finalNotes: text(input.finalNotes, 4000) || undefined
   };
 
   return {
@@ -217,13 +217,13 @@ function normalizeSubmission(input: SubmissionInput): NormalizedSubmission {
     personId: randomUUID(),
     original,
     memoryPreview: memoryText.slice(0, 220),
-    encounterDate: optionalText(original.encounterDate, 40),
+    encounterDate: optionalText(original.encounterDate, 40) ?? null,
     isApproximateDate: original.isApproximateDate || false,
-    locationName: optionalText(original.locationName, 240),
-    city: optionalText(original.city, 120),
-    region: optionalText(original.region, 120),
-    country: optionalText(original.country, 120),
-    eventName: optionalText(original.eventName, 240),
+    locationName: optionalText(original.locationName, 240) ?? null,
+    city: optionalText(original.city, 120) ?? null,
+    region: optionalText(original.region, 120) ?? null,
+    country: optionalText(original.country, 120) ?? null,
+    eventName: optionalText(original.eventName, 240) ?? null,
     createdAt
   };
 }
@@ -232,19 +232,19 @@ function normalizeReview(input: ReviewInput): NormalizedReview {
   requireStatus(input.status);
   return {
     status: input.status,
-    notes: optionalText(input.notes),
-    remembered: optionalText(input.remembered),
-    corrections: optionalText(input.corrections),
-    context: optionalText(input.context),
-    people: optionalText(input.people, 1000),
-    tags: optionalText(input.tags, 1000),
+    notes: optionalText(input.notes) ?? null,
+    remembered: optionalText(input.remembered) ?? null,
+    corrections: optionalText(input.corrections) ?? null,
+    context: optionalText(input.context) ?? null,
+    people: optionalText(input.people, 1000) ?? null,
+    tags: optionalText(input.tags, 1000) ?? null,
     importance: rating(input.importance),
     emotional_significance: rating(input.emotionalSignificance),
     historical_significance: rating(input.historicalSignificance),
     accuracy_confidence: rating(input.accuracyConfidence),
     book_potential: rating(input.bookPotential),
-    chapter_category: optionalText(input.chapterCategory, 240),
-    private_notes: optionalText(input.privateNotes),
+    chapter_category: optionalText(input.chapterCategory, 240) ?? null,
+    private_notes: optionalText(input.privateNotes) ?? null,
     updated_at: now()
   };
 }
@@ -265,7 +265,7 @@ export async function createSubmission(input: SubmissionInput) {
   db.prepare("INSERT INTO persons (id, display_name, contact, created_at) VALUES (?, ?, ?, ?)").run(
     record.personId,
     record.original.submitterName,
-    optionalText(record.original.contact, 240),
+    optionalText(record.original.contact, 240) ?? null,
     record.createdAt
   );
 
@@ -599,9 +599,9 @@ export async function updateSubmissionPreferences(submissionId: string, input: A
     WHERE id = ?
   `).run(
     input.attributionPreference || "anonymous",
-    optionalText(input.preferredAttribution, 240),
-    optionalText(input.bookNote, 4000),
-    optionalText(input.finalNotes, 4000),
+    optionalText(input.preferredAttribution, 240) ?? null,
+    optionalText(input.bookNote, 4000) ?? null,
+    optionalText(input.finalNotes, 4000) ?? null,
     updatedAt,
     submissionId
   );
