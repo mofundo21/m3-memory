@@ -928,6 +928,31 @@ select {
   }
 }
 
+/* Scroll Memory Section */
+.scroll-memory-section {
+  margin-bottom: 80px;
+}
+
+.scroll-memory-desktop {
+  display: grid;
+  gap: 48px;
+}
+
+.scroll-memory-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .scroll-memory-desktop {
+    display: none;
+  }
+
+  .scroll-memory-mobile {
+    display: grid;
+    gap: 32px;
+  }
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,
