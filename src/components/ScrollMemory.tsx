@@ -92,8 +92,9 @@ export function ScrollMemory() {
   }, []);
 
   return (
-    <div
+    <section
       ref={containerRef}
+      className="scroll-memory-section"
       style={{
         background: 'var(--bg)',
         color: 'var(--text)',
@@ -109,7 +110,7 @@ export function ScrollMemory() {
         }
       `}</style>
 
-      <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0 16px', position: 'relative' }}>
+      <div className="scroll-memory-desktop" style={{ maxWidth: '100%', margin: '0 auto', padding: '0 16px', position: 'relative' }}>
         {scenes.map((scene, index) => (
           <div
             key={scene.id}
@@ -394,6 +395,6 @@ export function ScrollMemory() {
           }
         }
       `}</style>
-    </div>
+    </section>
   );
 }
