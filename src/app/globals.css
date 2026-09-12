@@ -248,7 +248,8 @@ select {
 .field input,
 .field textarea,
 .field select,
-.soft-grid input {
+.soft-grid input,
+.field-input {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -257,12 +258,14 @@ select {
   padding: 12px 14px;
   font-size: 15px;
   transition: border-color 0.2s, background-color 0.2s;
+  font-family: var(--font-sans);
 }
 
 .field input:focus,
 .field textarea:focus,
 .field select:focus,
-.soft-grid input:focus {
+.soft-grid input:focus,
+.field-input:focus {
   outline: none;
   border-color: var(--purple-glow);
   background: color-mix(in srgb, var(--surface) 50%, transparent);

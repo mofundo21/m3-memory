@@ -3,16 +3,20 @@
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { updatePreferencesAction } from "../actions";
+import { useMemoryWizard } from "@/hooks/useMemoryWizard";
 
 export default function FinalMemoryContent() {
   const searchParams = useSearchParams();
   const submissionId = searchParams.get("submissionId");
+  const { state } = useMemoryWizard();
 
   const [formData, setFormData] = useState({
-    bookNote: "",
-    attributionPreference: "anonymous",
+    submitterName: state.submitterName || "",
+    contact: state.contact || "",
+    bookNote: state.bookNote || "",
+    attributionPreference: state.attributionPreference || "anonymous",
     preferredAttribution: "",
-    finalNotes: ""
+    finalNotes: state.finalNotes || ""
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,50 +41,96 @@ export default function FinalMemoryContent() {
 
   if (!submissionId) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center px-6">
-        <div className="text-center">
-          <p className="text-red-600 font-semibold">Error: Missing submission ID</p>
-          <a href="/remember" className="mt-4 inline-block text-indigo-600 hover:text-indigo-700">
-            ← Back to start
-          </a>
+      <div className="memory-shell center-shell">
+        <div className="intro">
+          <h1>Missing Submission</h1>
+          <p>Something went wrong. Please start over.</p>
         </div>
+        <a href="/remember" className="primary-action">
+          ← Back to start
+        </a>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <div className="max-w-2xl mx-auto px-6 py-12">
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">One More Thing</h1>
-          <p className="text-lg text-slate-600">Your memory is preserved exactly as you wrote it. These preferences are optional — they just let us know how you'd like to be recognized if your words ever become part of a larger story.</p>
+    <div className="memory-shell">
+      <div className="memory-header">
+        <div className="wordmark">M3 Memory</div>
+        <div>Step 4 of 4</div>
+      </div>
+
+      <div className="memory-card">
+        <div className="intro">
+          <h1>Leave Your Mark</h1>
+          <p>Your memory is preserved exactly as you wrote it. These details let us know how to credit you.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-12">
-          {/* Book Note Section */}
-          <fieldset className="space-y-6 border-b border-slate-200 pb-8">
-            <legend className="text-xl font-semibold text-slate-900 mb-4">If this becomes a story...</legend>
-            <div>
-              <label htmlFor="bookNote" className="block text-sm font-medium text-slate-700 mb-2">
-                Add a note for that scenario (optional)
+        <form onSubmit={handleSubmit} className="memory-form">
+          {error && (
+            <div className="error-note">{error}</div>
+          )}
+
+          <div className="grid">
+            <div className="field">
+              <label htmlFor="submitterName">
+                <span className="kicker">Optional</span>
+                Your name
               </label>
-              <textarea
-                id="bookNote"
-                value={formData.bookNote}
-                onChange={(e) => setFormData({ ...formData, bookNote: e.target.value })}
-                rows={3}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="e.g., This story reminds me of... or consider including..."
+              <input
+                type="text"
+                id="submitterName"
+                value={formData.submitterName}
+                onChange={(e) => setFormData({ ...formData, submitterName: e.target.value })}
+                placeholder="Leave blank for Anonymous"
+                className="field-input"
               />
             </div>
-          </fieldset>
 
-          {/* Attribution Section */}
-          <fieldset className="space-y-6 border-b border-slate-200 pb-8">
-            <legend className="text-xl font-semibold text-slate-900 mb-4">How should I refer to you?</legend>
-            <p className="text-sm text-slate-600 mb-4">This is your preference — not a publication guarantee. Your original memory is always yours, unchanged.</p>
+            <div className="field">
+              <label htmlFor="contact">Your email</label>
+              <input
+                type="email"
+                id="contact"
+                value={formData.contact}
+                onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                placeholder="your@email.com"
+                className="field-input"
+              />
+            </div>
+          </div>
 
-            <div className="space-y-3">
+          <div className="field" style={{ marginTop: '24px' }}>
+            <label htmlFor="bookNote">
+              <span className="kicker">Optional</span>
+              What would you want me to know?
+            </label>
+            <textarea
+              id="bookNote"
+              value={formData.bookNote}
+              onChange={(e) => setFormData({ ...formData, bookNote: e.target.value })}
+              rows={3}
+              className="field-input"
+              placeholder="This story reminds me of... or I think you should know that..."
+            />
+          </div>
+
+          <fieldset style={{ marginTop: '24px' }}>
+            <legend style={{
+              color: 'var(--text)',
+              fontSize: '14px',
+              fontWeight: 600,
+              marginBottom: '12px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              How should I refer to you?
+            </legend>
+            <p className="micro-note" style={{ marginBottom: '16px' }}>
+              Your original memory stays unchanged. This is just how I might credit you.
+            </p>
+
+            <div style={{ display: 'grid', gap: '8px' }}>
               {[
                 { value: "anonymous", label: "Anonymous" },
                 { value: "first_name", label: "First name only" },
@@ -90,89 +140,68 @@ export default function FinalMemoryContent() {
                 { value: "initials", label: "Initials only" },
                 { value: "custom", label: "Custom name or reference" }
               ].map((option) => (
-                <label key={option.value} className="flex items-center cursor-pointer">
+                <label key={option.value} className="checkline">
                   <input
                     type="radio"
                     name="attributionPreference"
                     value={option.value}
                     checked={formData.attributionPreference === option.value}
                     onChange={(e) => setFormData({ ...formData, attributionPreference: e.target.value })}
-                    className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
                   />
-                  <span className="ml-3 text-sm font-medium text-slate-700">{option.label}</span>
+                  <span>{option.label}</span>
                 </label>
               ))}
             </div>
 
             {formData.attributionPreference === "custom" && (
-              <div className="mt-4">
+              <div className="field" style={{ marginTop: '16px' }}>
                 <input
                   type="text"
                   value={formData.preferredAttribution}
                   onChange={(e) => setFormData({ ...formData, preferredAttribution: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="field-input"
                   placeholder="Your custom name or reference"
                 />
               </div>
             )}
           </fieldset>
 
-          {/* Final Notes Section */}
-          <fieldset className="space-y-6 border-b border-slate-200 pb-8">
-            <legend className="text-xl font-semibold text-slate-900 mb-4">One more thing...</legend>
-            <div>
-              <label htmlFor="finalNotes" className="block text-sm font-medium text-slate-700 mb-2">
-                Final notes or thoughts (optional)
-              </label>
-              <textarea
-                id="finalNotes"
-                value={formData.finalNotes}
-                onChange={(e) => setFormData({ ...formData, finalNotes: e.target.value })}
-                rows={3}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="Anything else you'd like us to know?"
-              />
-            </div>
-          </fieldset>
-
-          {/* Summary Section (Read-only) */}
-          <div className="border border-slate-200 rounded-lg bg-slate-50 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Your Memory Summary</h2>
-            <p className="text-sm text-slate-600 mb-4">Review your submission before confirming:</p>
-            <div className="text-sm text-slate-700 space-y-2 mb-4">
-              <p>
-                <span className="font-medium">Status:</span> Ready to submit — your original memory is preserved exactly as written.
-              </p>
-              <p>
-                <span className="font-medium">Attribution:</span> {formData.attributionPreference === "custom" ? formData.preferredAttribution || "Custom name (not yet specified)" : `${formData.attributionPreference}`}
-              </p>
-            </div>
-            <a
-              href="/remember/write"
-              className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
-            >
-              ← Edit your memory
-            </a>
+          <div className="field" style={{ marginTop: '24px' }}>
+            <label htmlFor="finalNotes">Anything else?</label>
+            <textarea
+              id="finalNotes"
+              value={formData.finalNotes}
+              onChange={(e) => setFormData({ ...formData, finalNotes: e.target.value })}
+              rows={2}
+              className="field-input"
+              placeholder="Other thoughts or context..."
+            />
           </div>
 
-          {/* Error Display */}
-          {error && <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
+          <div className="panel" style={{ marginTop: '32px' }}>
+            <h2>Your Memory</h2>
+            <div className="original-field">
+              <strong>Status</strong>
+              <p>Memory written ✓</p>
+            </div>
+            <div className="original-field">
+              <strong>Preferred name</strong>
+              <p>
+                {formData.attributionPreference === "custom"
+                  ? formData.preferredAttribution || "(not yet specified)"
+                  : formData.submitterName || "(will use Anonymous)"}
+              </p>
+            </div>
+          </div>
 
-          {/* Submit Button */}
-          <div className="pt-8 flex gap-4">
+          <div style={{ marginTop: '32px' }}>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 text-white font-semibold rounded-lg transition-colors duration-200"
+              className="primary-action"
             >
-              {isSubmitting ? "Submitting..." : "Submit Memory"}
+              {isSubmitting ? "Sending..." : "Send My Memory →"}
             </button>
-            <a
-              href="/remember"
-              className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-900 font-semibold rounded-lg transition-colors duration-200"
-            >
-              Back
-            </a>
           </div>
         </form>
       </div>

@@ -1,71 +1,63 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { PhotoPlaceholder } from "./PhotoPlaceholder";
 
 export interface MemoryScene {
   id: string;
   title: string;
   text: string;
-  photoCategory: string;
   photoAlt: string;
 }
 
 const scenes: MemoryScene[] = [
   {
-    id: "crossing-paths",
-    title: "Crossing Paths",
-    text: "Every person we meet leaves a mark. The conversations that stick with us, the moments that feel significant — these are the seeds of memory.",
-    photoCategory: "memory-hero",
-    photoAlt: "Two people meeting"
+    id: "hero",
+    title: "M3 MEMORY",
+    text: "An autobiography written by everyone who was there.",
+    photoAlt: "Central portrait"
   },
   {
-    id: "however-long",
-    title: "However Long",
-    text: "Whether it was five minutes or five years, time doesn't measure the weight of connection. What matters is what was exchanged: a story, a laugh, a piece of yourself.",
-    photoCategory: "memory-festival-01",
-    photoAlt: "Festival gathering"
+    id: "one-way",
+    title: "One Way",
+    text: "I remember my life from my perspective.",
+    photoAlt: "Personal memory"
   },
   {
-    id: "different-pieces",
-    title: "Different Pieces",
-    text: "You remember details. The jacket they wore. What they were talking about. The small things that made the encounter real and specific, not generic.",
-    photoCategory: "memory-dj-01",
-    photoAlt: "Close detail photograph"
+    id: "another-way",
+    title: "Another Way",
+    text: "But everyone who was there remembers something different.",
+    photoAlt: "Another perspective"
   },
   {
-    id: "a-lot-of-life",
-    title: "A Lot of Life",
-    text: "Your life contains thousands of these encounters. Each one shaped how you think, who you became, where you are now. They're worth preserving.",
-    photoCategory: "memory-chess-01",
-    photoAlt: "Life milestone"
+    id: "place",
+    title: "A Place",
+    text: "They remember a café. A festival. A car ride.",
+    photoAlt: "Location memory"
   },
   {
-    id: "the-gap",
-    title: "The Gap",
-    text: "But without you, these stories disappear. They live only in your mind. And when life moves on, they fade.",
-    photoCategory: "memory-friends-01",
-    photoAlt: "Nostalgic photograph"
+    id: "one-night",
+    title: "One Night",
+    text: "They remember one night. A conversation that stuck.",
+    photoAlt: "Evening memory"
   },
   {
-    id: "why-m3-exists",
-    title: "Why M3 Memory Exists",
-    text: "M3 Memory collects these stories. Not for a book. Not for publication. Just... kept. Preserved. A record of the people who touched your life, in your own words.",
-    photoCategory: "memory-night-01",
-    photoAlt: "Evening reflection"
+    id: "ordinary",
+    title: "Ordinary Life",
+    text: "They remember the ordinary moments. The ones I might've forgotten.",
+    photoAlt: "Everyday moment"
   },
   {
-    id: "source-not-story",
-    title: "Source ≠ Story",
-    text: "Your original memory is sacred — unchanged, forever your version. If your words ever inspire something larger, that's a separate step, a different choice, made carefully and separately.",
-    photoCategory: "memory-old-01",
-    photoAlt: "Historical archive"
+    id: "without-them",
+    title: "Without Them",
+    text: "But I don't remember it. But you do.",
+    photoAlt: "Their memory"
   },
   {
-    id: "enter-memory",
-    title: "Enter the Memory",
-    text: "Tell us about someone you remember. What you saw, felt, exchanged. Your words. Your account. No judgment, no editing. Just kept.",
-    photoCategory: "memory-life-01",
-    photoAlt: "Personal reflection"
+    id: "purpose",
+    title: "That's What This Is For",
+    text: "These are the stories only you know. The version only you remember. It just has to be yours.",
+    photoAlt: "Authentic moment"
   }
 ];
 
@@ -100,8 +92,14 @@ export function ScrollMemory() {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative w-full min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white overflow-x-hidden">
-      {/* Prefers-reduced-motion: static layout, no animation */}
+    <div
+      ref={containerRef}
+      style={{
+        background: 'var(--bg)',
+        color: 'var(--text)',
+        overflow: 'hidden'
+      }}
+    >
       <style>{`
         @media (prefers-reduced-motion: reduce) {
           .scroll-scene {
@@ -111,46 +109,94 @@ export function ScrollMemory() {
         }
       `}</style>
 
-      {/* Scene Container */}
-      <div className="max-w-4xl mx-auto px-6 py-20 lg:py-32">
+      <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0 16px', position: 'relative' }}>
         {scenes.map((scene, index) => (
           <div
             key={scene.id}
             ref={(el) => {
               sceneRefs.current[index] = el;
             }}
-            className="scroll-scene relative mb-32 lg:mb-48 opacity-0 transition-all duration-700 ease-out"
+            className="scroll-scene"
             style={{
-              transform: "translateY(20px)",
-              minHeight: "60vh",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexDirection: "column"
+              opacity: 0,
+              transform: 'translateY(20px)',
+              transition: 'opacity 700ms ease-out, transform 700ms ease-out',
+              minHeight: '60vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              paddingTop: index === 0 ? '120px' : '80px',
+              paddingBottom: '80px',
+              position: 'relative',
+              textAlign: 'center'
             }}
           >
-            {/* Photo placeholder */}
+            {/* Background photo placeholder layer */}
             <div
-              className="absolute inset-0 rounded-lg overflow-hidden opacity-30 lg:opacity-50 -z-10"
               style={{
-                backgroundImage: `linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)`,
-                backgroundSize: "cover",
-                backgroundPosition: "center"
+                position: 'absolute',
+                inset: 0,
+                opacity: 0.15,
+                zIndex: 0,
+                borderRadius: 'var(--radius-lg)'
               }}
-              aria-label={`Placeholder for ${scene.photoAlt}`}
-            />
-
-            {/* Text content */}
-            <div className="relative z-10 text-center space-y-6">
-              <h2 className="text-4xl lg:text-5xl font-bold leading-tight">{scene.title}</h2>
-              <p className="text-lg lg:text-xl text-slate-200 max-w-2xl mx-auto leading-relaxed">{scene.text}</p>
+            >
+              <PhotoPlaceholder
+                size="large"
+                aspectRatio="1"
+              />
             </div>
 
-            {/* Scroll indicator on first scene only */}
+            {/* Text content */}
+            <div style={{ position: 'relative', zIndex: 10, maxWidth: '700px', padding: '0 20px' }}>
+              <h2 style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 'clamp(36px, 8vw, 72px)',
+                fontWeight: 700,
+                lineHeight: 1.1,
+                letterSpacing: index === 0 ? '2px' : '-0.5px',
+                marginBottom: '24px',
+                color: 'var(--text)',
+                textTransform: index === 0 ? 'uppercase' : 'none'
+              }}>
+                {scene.title}
+              </h2>
+              <p style={{
+                fontSize: 'clamp(18px, 5vw, 28px)',
+                lineHeight: 1.6,
+                color: 'var(--muted)',
+                marginBottom: 0
+              }}>
+                {scene.text}
+              </p>
+            </div>
+
+            {/* Scroll indicator on first scene */}
             {index === 0 && (
-              <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
-                <div className="w-6 h-10 border-2 border-white rounded-full flex items-center justify-center">
-                  <div className="w-1 h-2 bg-white rounded-full"></div>
+              <div style={{
+                position: 'absolute',
+                bottom: '40px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                animation: 'bounce 2s infinite',
+                zIndex: 10
+              }}>
+                <div style={{
+                  width: '24px',
+                  height: '40px',
+                  border: '2px solid var(--purple)',
+                  borderRadius: '999px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <div style={{
+                    width: '4px',
+                    height: '8px',
+                    background: 'var(--purple)',
+                    borderRadius: '999px'
+                  }} />
                 </div>
               </div>
             )}
@@ -162,34 +208,53 @@ export function ScrollMemory() {
           ref={(el) => {
             sceneRefs.current[scenes.length] = el;
           }}
-          className="scroll-scene relative mb-20 opacity-0 transition-all duration-700 ease-out"
+          className="scroll-scene"
           style={{
-            transform: "translateY(20px)"
+            opacity: 0,
+            transform: 'translateY(20px)',
+            transition: 'opacity 700ms ease-out, transform 700ms ease-out',
+            minHeight: '60vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingTop: '80px',
+            paddingBottom: '120px'
           }}
         >
-          <div className="text-center space-y-8">
-            <p className="text-slate-300 text-lg">Your memory matters.</p>
+          <div style={{ textAlign: 'center', zIndex: 10 }}>
+            <p style={{
+              fontSize: '20px',
+              color: 'var(--muted)',
+              marginBottom: '48px',
+              letterSpacing: '0.5px'
+            }}>
+              Tell me what you remember.
+            </p>
             <a
               href="/remember/write"
-              className="inline-block px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors duration-200"
+              className="primary-action"
+              style={{
+                display: 'inline-block'
+              }}
             >
-              I'M READY — LET'S REMEMBER →
+              LET'S REMEMBER →
             </a>
           </div>
         </div>
       </div>
 
-      {/* Mobile-specific styles */}
       <style>{`
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(8px); }
+        }
+
         @media (max-width: 768px) {
           .scroll-scene {
+            padding-top: 40px !important;
+            padding-bottom: 60px !important;
             min-height: 50vh !important;
-          }
-          .scroll-scene h2 {
-            font-size: 2rem;
-          }
-          .scroll-scene p {
-            font-size: 1rem;
           }
         }
       `}</style>
