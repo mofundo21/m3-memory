@@ -98,6 +98,26 @@ select {
   }
 }
 
+/* Form layouts with optional sidebar */
+.memory-form-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+
+@media (min-width: 1200px) {
+  .memory-form-layout {
+    grid-template-columns: 260px 1fr;
+  }
+
+  .memory-form-sidebar {
+    position: sticky;
+    top: 24px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+}
+
 /* Responsive adjustments */
 @media (max-width: 1199px) {
   .home-shell {
