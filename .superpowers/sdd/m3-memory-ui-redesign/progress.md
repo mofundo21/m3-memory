@@ -75,3 +75,17 @@ Sequential tasks (9-11) will start after review gates clear.
 - Task 6 (Scroll): ade7ed152a6e32cc5
 - Task 7 (Forms): abe26a415ce609cb1
 
+
+### Task 2 Review: CLEAN ✅
+Task 2: complete (commits 0ca2dab..7c822d8, review clean)
+
+
+**RULING - Task 8 Scope Issue:** Commit e027836 includes CSS from Tasks 3,4,5,7 mixed together. CSS output is correct; violation is commit hygiene/isolation. Proceeding; will address in final review.
+
+### Task 5 Review: CLEAN ✅ 
+Task 5: complete (commit d1af970, gallery overlapping layout correct)
+
+
+### Task 4 Review: QUALITY ⚠️, SPEC ✅
+Ruling: Spec requirements MET (Admin removed). Commit hygiene issues noted (CSS from forms added, page.tsx changes separate). End result correct. Proceeding.
+

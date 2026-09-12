@@ -1,0 +1,46 @@
+diff --git a/src/app/globals.css b/src/app/globals.css
+index e90a73c..3d8149e 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -923,16 +923,41 @@ select {
+   }
+ 
+   .gallery {
+     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+     gap: 16px;
+   }
+ }
+ 
++/* Scroll Memory Section */
++.scroll-memory-section {
++  margin-bottom: 80px;
++}
++
++.scroll-memory-desktop {
++  display: grid;
++  gap: 48px;
++}
++
++.scroll-memory-mobile {
++  display: none;
++}
++
++@media (max-width: 768px) {
++  .scroll-memory-desktop {
++    display: none;
++  }
++
++  .scroll-memory-mobile {
++    display: grid;
++    gap: 32px;
++  }
++}
++
+ /* Reduced motion */
+ @media (prefers-reduced-motion: reduce) {
+   *,
+   *::before,
+   *::after {
+     animation-duration: 0.01ms !important;
+     animation-iteration-count: 1 !important;
+     transition-duration: 0.01ms !important;
