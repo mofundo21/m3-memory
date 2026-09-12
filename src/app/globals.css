@@ -75,9 +75,28 @@ select {
   padding: 24px 16px 48px;
 }
 
-.home-shell,
+.home-shell {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
 .memory-shell {
   width: min(760px, 100%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1199px) {
+  .home-shell {
+    width: min(920px, 100%);
+  }
+}
+
+@media (max-width: 768px) {
+  .home-shell {
+    width: min(100%, 100%);
+    padding: 16px 12px 40px;
+  }
 }
 
 .center-shell {
@@ -106,6 +125,18 @@ select {
   letter-spacing: 1px;
   text-transform: uppercase;
   font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .home-nav {
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .wordmark {
+    text-align: left;
+  }
 }
 
 .quiet-link {
@@ -143,7 +174,7 @@ select {
 .thanks-card h1 {
   margin: 0;
   font-family: var(--font-serif);
-  font-size: clamp(44px, 8vw, 72px);
+  font-size: clamp(40px, 4.5vw, 68px);
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.5px;
