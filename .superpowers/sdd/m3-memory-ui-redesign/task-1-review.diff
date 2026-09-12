@@ -1,0 +1,106 @@
+diff --git a/src/app/globals.css b/src/app/globals.css
+index 88a4bf6..9e06094 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -68,25 +68,44 @@ select {
+ /* Containers */
+ .shell,
+ .home-shell,
+ .memory-shell,
+ .admin-shell {
+   width: min(1120px, 100%);
+   margin: 0 auto;
+   padding: 24px 16px 48px;
+ }
+ 
+-.home-shell,
++.home-shell {
++  width: min(1200px, 100%);
++  margin: 0 auto;
++  padding: 24px 16px 48px;
++}
++
+ .memory-shell {
+   width: min(760px, 100%);
+ }
+ 
++/* Responsive adjustments */
++@media (max-width: 1199px) {
++  .home-shell {
++    width: min(920px, 100%);
++  }
++}
++
++@media (max-width: 768px) {
++  .home-shell {
++    width: min(100%, 100%);
++    padding: 16px 12px 40px;
++  }
++}
++
+ .center-shell {
+   min-height: 100svh;
+   display: grid;
+   align-items: center;
+   justify-items: center;
+ }
+ 
+ /* Navigation & Headers */
+ .home-nav,
+ .memory-header {
+@@ -101,20 +120,32 @@ select {
+ }
+ 
+ .wordmark {
+   color: var(--text);
+   font-weight: 800;
+   letter-spacing: 1px;
+   text-transform: uppercase;
+   font-size: 14px;
+ }
+ 
++@media (max-width: 768px) {
++  .home-nav {
++    flex-direction: column;
++    gap: 12px;
++    margin-bottom: 32px;
++  }
++
++  .wordmark {
++    text-align: left;
++  }
++}
++
+ .quiet-link {
+   color: var(--muted);
+   font-size: 13px;
+ }
+ 
+ .kicker {
+   margin: 0;
+   color: var(--purple);
+   font-size: 11px;
+   font-weight: 700;
+@@ -136,21 +167,21 @@ select {
+   padding: clamp(32px, 8vw, 64px);
+   display: grid;
+   gap: 20px;
+ }
+ 
+ .home-hero h1,
+ .intro h1,
+ .thanks-card h1 {
+   margin: 0;
+   font-family: var(--font-serif);
+-  font-size: clamp(44px, 8vw, 72px);
++  font-size: clamp(40px, 4.5vw, 68px);
+   font-weight: 700;
+   line-height: 1.1;
+   letter-spacing: -0.5px;
+   color: var(--text);
+ }
+ 
+ .home-hero p,
+ .intro p,
+ .thanks-card p {
+   margin: 0;

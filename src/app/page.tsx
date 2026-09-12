@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PolaroidCard } from "@/components/PolaroidCard";
-import { PhotoPlaceholder } from "@/components/PhotoPlaceholder";
+import { HomeHero } from "@/components/HomeHero";
 
 export default function HomePage() {
   return (
@@ -10,24 +10,7 @@ export default function HomePage() {
         <a href="#about" className="quiet-link">About</a>
       </header>
 
-      <div className="split" style={{ alignItems: 'start', marginBottom: '64px' }}>
-        <section className="home-hero" style={{ padding: '0' }}>
-          <p className="kicker">Personal Archive × Creative Studio × Memory Box</p>
-          <h1>An autobiography written by everyone who was there.</h1>
-          <p>
-            Festivals. Friends. Late nights. Conversations. Chaos. Connection. I don't remember everything, but maybe you do.
-          </p>
-          <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: '1fr auto' }}>
-            <div>
-              <p style={{ marginBottom: '4px', fontSize: '13px', color: 'var(--muted)', fontWeight: '500' }}>Real memories. A bigger picture.</p>
-            </div>
-            <Link className="primary-action" href="/remember" style={{ whiteSpace: 'nowrap' }}>Share a Memory</Link>
-          </div>
-          <p className="micro-note">No account needed. Your original words stay private and preserved.</p>
-        </section>
-
-        <PhotoPlaceholder aspectRatio="2/3" size="large" showLabel={false} />
-      </div>
+      <HomeHero />
 
       <section id="about" style={{ marginBottom: '64px' }}>
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '32px', marginBottom: '24px' }}>What is M3 Memory?</h2>

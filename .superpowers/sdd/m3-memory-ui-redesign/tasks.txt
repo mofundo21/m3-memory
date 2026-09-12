@@ -1,0 +1,11 @@
+Task 1: Expand Container Widths and Create Desktop Breakpoints
+Task 2: Redesign PhotoPlaceholder with Photographic Treatment
+Task 3: Create Separate Hero Component and Desktop Layout
+Task 4: Fix Public Navigation (Remove/Hide Admin Link)
+Task 5: Redesign Gallery/Polaroid Strip with Overlap and Rotation
+Task 6: Integrate Scroll Experience with Design Tokens
+Task 7: Optimize Form Layouts for Desktop
+Task 8: Create Desktop-Specific Admin Sidebar Layout
+Task 9: Screenshots and Visual Verification
+Task 10: Type Check, Lint, and Build
+Task 11: Deploy to Vercel Preview
