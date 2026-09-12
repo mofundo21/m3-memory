@@ -7,10 +7,7 @@ export default function HomePage() {
     <main className="home-shell">
       <header className="home-nav">
         <Link className="wordmark" href="/">M3 Memory</Link>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <a href="#about" className="quiet-link">About</a>
-          <Link className="quiet-link" href="/admin">Admin</Link>
-        </div>
+        <a href="#about" className="quiet-link">About</a>
       </header>
 
       <div className="split" style={{ alignItems: 'start', marginBottom: '64px' }}>
@@ -29,7 +26,7 @@ export default function HomePage() {
           <p className="micro-note">No account needed. Your original words stay private and preserved.</p>
         </section>
 
-        <PhotoPlaceholder label="Hero Portrait" />
+        <PhotoPlaceholder aspectRatio="2/3" size="large" showLabel={false} />
       </div>
 
       <section id="about" style={{ marginBottom: '64px' }}>
