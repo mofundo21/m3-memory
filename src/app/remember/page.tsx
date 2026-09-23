@@ -1,4 +1,4 @@
-import { ScrollMemory } from "@/components/ScrollMemory";
+import { CinematicIntro } from "@/components/CinematicIntro";
 
 export const metadata = {
   title: "Remember | M3 Memory",
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function RememberPage() {
-  return <ScrollMemory />;
+  return <CinematicIntro />;
 }
