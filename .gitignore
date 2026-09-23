@@ -22,3 +22,9 @@ graphify-out/.graphify_python
 .graphify_*.json
 graphify-out/.graphify_root
 .vercel
+
+# SDD screenshots (regenerable review artifacts)
+.superpowers/sdd/**/*.png
+
+# Throwaway dev scripts
+cap.js
