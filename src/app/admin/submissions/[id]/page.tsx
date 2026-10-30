@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { updateSubmission } from "../../actions";
+import { AdminNav } from "@/components/admin-nav";
+import { relationshipDuration } from "@/lib/relationship-duration";
 
 function text(value: unknown) {
   return typeof value === "string" && value.trim() ? value : null;
@@ -19,7 +21,7 @@ export default async function SubmissionPage({
   const { data: submission } = await db
     .from("submissions")
     .select(
-      "*,persons(*),encounters(*),consent_grants(*),submission_flags(*),reviews(*),media(*)",
+      "*,persons(*),encounters(*),consent_grants(*),submission_flags(*),reviews(*),media(*),submission_tags(tags(*)),book_desk_entries(*),follow_ups(*)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -32,7 +34,12 @@ export default async function SubmissionPage({
     ? submission.submission_flags[0]
     : submission.submission_flags;
   const review = submission.reviews?.[0];
+  const bookEntry = submission.book_desk_entries?.[0];
+  const followUp = submission.follow_ups?.[0];
+  const selectedTagIds = new Set((submission.submission_tags || []).map((link: {tags:{id:string}|{id:string}[]}) => Array.isArray(link.tags) ? link.tags[0]?.id : link.tags?.id).filter(Boolean));
+  const { data: allTags } = await db.from("tags").select("id,name").order("name");
   const original = submission.original_json || {};
+  const duration = relationshipDuration({ occurredOn: encounter?.occurred_on, approximateDateText: encounter?.approximate_date_text || submission.encounter_date, certainty: encounter?.date_certainty || (submission.is_approximate_date ? "approximate" : submission.encounter_date ? "exact" : "unknown") });
   const media = await Promise.all(
     (submission.media || []).map(
       async (item: {
@@ -86,6 +93,35 @@ export default async function SubmissionPage({
       "The page in the book",
       encounter?.book_page_message || original.bookPageMessage,
     ],
+    ["Definitely the first meeting?", encounter?.definitely_first_meeting || original.definitelyFirstMeeting],
+    ["Time of day", encounter?.time_of_day || original.timeOfDay],
+    ["Where exactly", encounter?.exact_place || original.exactPlace],
+    ["Who they were with", encounter?.contributor_with || original.contributorWith],
+    ["Who MOFUNDO was with", encounter?.mofundo_with || original.mofundoWith],
+    ["Introduced by", encounter?.introduced_by || original.introducedBy],
+    ["What was happening around them", encounter?.surroundings || original.surroundings],
+    ["Immediately before", encounter?.immediately_before || original.immediatelyBefore],
+    ["Time together", encounter?.time_together || original.timeTogether],
+    ["MOFUNDO's hair, style, or look", encounter?.mofundo_hair_style || original.mofundoHairStyle],
+    ["What MOFUNDO carried", encounter?.mofundo_carrying || original.mofundoCarrying],
+    ["What they carried", encounter?.contributor_carrying || original.contributorCarrying],
+    ["Music playing", encounter?.music_playing || original.musicPlaying],
+    ["DJ, artist, or set", encounter?.artist_or_set || original.artistOrSet],
+    ["What the place looked like", encounter?.place_appearance || original.placeAppearance],
+    ["Distinctive detail nearby", encounter?.distinctive_nearby || original.distinctiveNearby],
+    ["What they heard", encounter?.remembered_hearing || original.rememberedHearing],
+    ["What they saw", encounter?.remembered_seeing || original.rememberedSeeing],
+    ["MOFUNDO's exact words", encounter?.mofundo_exact_words || original.mofundoExactWords],
+    ["Their exact words", encounter?.contributor_exact_words || original.contributorExactWords],
+    ["Remembered quote or joke", encounter?.remembered_quote_or_joke || original.rememberedQuoteOrJoke],
+    ["Before talking", encounter?.impression_before_talking || original.impressionBeforeTalking],
+    ["After talking", encounter?.impression_after_talking || original.impressionAfterTalking],
+    ["Seen since", encounter?.seen_since || original.seenSince],
+    ["Next encounter", original.nextSeenStory || encounter?.next_seen_where || original.nextSeenWhere],
+    ["Connection today", original.connectionToday || person?.relationship_today],
+    ["Smallest remembered detail", encounter?.smallest_detail || original.smallestDetail],
+    ["Never told before", encounter?.never_told_detail || original.neverToldDetail],
+    ["A different recollection", encounter?.differing_memory || original.differingMemory],
   ].filter(([, value]) => text(value));
   const evidenceBlock = media.length ? (
     <section className="evidence-section">
@@ -119,6 +155,7 @@ export default async function SubmissionPage({
   ) : null;
   return (
     <main className="admin-shell">
+      <AdminNav active="Submissions" />
       <Link className="back-link" href="/admin">
         ← Back to inbox
       </Link>
@@ -130,6 +167,7 @@ export default async function SubmissionPage({
         </div>
         <span className="status-pill">{submission.status}</span>
       </header>
+      <section className="archive-summary"><div><span>Archive ID</span><strong>{submission.reference_code}</strong></div><div><span>First encounter</span><strong>{encounter?.occurred_on || encounter?.approximate_date_text || submission.encounter_date || "Unknown"}</strong></div><div><span>Relationship</span><strong>{duration.label}</strong></div><div><span>Event</span><strong>{submission.event_name || encounter?.submitted_event_name || "Not provided"}</strong></div><div><span>Location</span><strong>{[submission.location_name,submission.city].filter(Boolean).join(", ") || "Not provided"}</strong></div><div><span>Evidence</span><strong>{media.length} file{media.length===1?"":"s"}</strong></div><div><span>Book</span><strong>{flags?.book_potential?"Potential":"Not flagged"}</strong></div><div><span>Verification</span><strong>{flags?.needs_verification?"Needed":"No flag"}</strong></div></section>
       <div className="review-layout">
         <section className="admin-card memory-detail">
           <h2>Memory</h2>
@@ -184,6 +222,7 @@ export default async function SubmissionPage({
           <h2>Review</h2>
           <form action={updateSubmission}>
             <input type="hidden" name="submissionId" value={id} />
+            <input type="hidden" name="encounterId" value={encounter?.id || ""} />
             <label>
               Status
               <select name="status" defaultValue={submission.status}>
@@ -214,6 +253,8 @@ export default async function SubmissionPage({
               />{" "}
               Book potential
             </label>
+            <label>Book Desk category<select name="bookCategory" defaultValue={bookEntry?.category || "Unsorted"}>{["Unsorted","Strong Stories","Strong Quotes","Stories I Forgot","Needs Interview","Needs Verification","Photo Evidence","Early History","Festival Stories","Major Turning Points"].map((item)=><option key={item}>{item}</option>)}</select></label>
+            <label>Book notes<textarea name="bookNotes" defaultValue={bookEntry?.notes || ""} /></label>
             <label className="admin-check">
               <input
                 type="checkbox"
@@ -238,6 +279,10 @@ export default async function SubmissionPage({
               />{" "}
               Needs follow-up
             </label>
+            <label>Follow-up status<select name="followUpStatus" defaultValue={followUp?.status || "Needed"}>{["Needed","Contacted","Waiting","Completed","Unable to contact"].map((item)=><option key={item}>{item}</option>)}</select></label>
+            <label>Why follow-up is needed<textarea name="followUpReason" defaultValue={followUp?.reason || ""} /></label>
+            <fieldset className="tag-fieldset"><legend>Archive tags</legend><div className="tag-options">{allTags?.map((tag)=><label className="tag-option" key={tag.id}><input type="checkbox" name="tagIds" value={tag.id} defaultChecked={selectedTagIds.has(tag.id)} />{tag.name}</label>)}</div><input name="customTag" placeholder="Add a custom tag" /></fieldset>
+            <details className="verification-editor"><summary>Verified archive facts</summary><label>Verified date<input name="verifiedDate" type="date" defaultValue={encounter?.verified_occurred_on || ""}/></label><label>Verified event<input name="verifiedEvent" defaultValue={encounter?.verified_event_name || ""}/></label><label>Verified venue<input name="verifiedVenue" defaultValue={encounter?.verified_venue || ""}/></label><label>Verified city<input name="verifiedCity" defaultValue={encounter?.verified_city || ""}/></label><label>Verification source<input name="verificationSource" defaultValue={encounter?.verification_source || ""}/></label><label>Confidence (0–100)<input name="verificationConfidence" type="number" min="0" max="100" defaultValue={encounter?.verification_confidence || ""}/></label><label>Verification notes<textarea name="verificationNotes" defaultValue={encounter?.verification_notes || ""}/></label></details>
             <button className="admin-primary">Save review</button>
           </form>
         </aside>

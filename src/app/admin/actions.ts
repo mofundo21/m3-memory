@@ -25,6 +25,32 @@ export async function updateSubmission(formData: FormData) {
     updated_at: new Date().toISOString(),
   });
   if (flagError) throw flagError;
+  if (formData.get("bookPotential") === "on") {
+    const { error } = await db.from("book_desk_entries").upsert({ submission_id: id, category: String(formData.get("bookCategory") || "Unsorted"), notes: String(formData.get("bookNotes") || "").trim() || null, updated_at: new Date().toISOString() });
+    if (error) throw error;
+  } else {
+    const { error } = await db.from("book_desk_entries").delete().eq("submission_id", id); if (error) throw error;
+  }
+  if (formData.get("needsFollowUp") === "on") {
+    const { error } = await db.from("follow_ups").upsert({ submission_id: id, status: String(formData.get("followUpStatus") || "Needed"), reason: String(formData.get("followUpReason") || "").trim() || null, notes: String(formData.get("followUpNotes") || "").trim() || null, updated_at: new Date().toISOString() });
+    if (error) throw error;
+  } else {
+    const { error } = await db.from("follow_ups").delete().eq("submission_id", id); if (error) throw error;
+  }
+  const selectedTagIds = formData.getAll("tagIds").map(String).filter(Boolean);
+  const customTag = String(formData.get("customTag") || "").trim();
+  if (customTag) {
+    const { data: tag, error } = await db.from("tags").upsert({ name: customTag }, { onConflict: "name" }).select("id").single();
+    if (error) throw error; selectedTagIds.push(tag.id);
+  }
+  const { error: clearTagsError } = await db.from("submission_tags").delete().eq("submission_id", id); if (clearTagsError) throw clearTagsError;
+  if (selectedTagIds.length) { const { error } = await db.from("submission_tags").insert([...new Set(selectedTagIds)].map((tag_id) => ({ submission_id: id, tag_id }))); if (error) throw error; }
+  const encounterId = String(formData.get("encounterId") || "");
+  if (encounterId) {
+    const verifiedDate = String(formData.get("verifiedDate") || "");
+    const { error } = await db.from("encounters").update({ verified_occurred_on: verifiedDate || null, verified_event_name: String(formData.get("verifiedEvent") || "").trim() || null, verified_venue: String(formData.get("verifiedVenue") || "").trim() || null, verified_city: String(formData.get("verifiedCity") || "").trim() || null, verification_notes: String(formData.get("verificationNotes") || "").trim() || null, verification_source: String(formData.get("verificationSource") || "").trim() || null, verification_confidence: Number(formData.get("verificationConfidence") || 0) || null }).eq("id", encounterId);
+    if (error) throw error;
+  }
   const notes = String(formData.get("privateNotes") || "").trim();
   const { data: existing } = await db.from("reviews").select("id").eq("submission_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (existing) {
