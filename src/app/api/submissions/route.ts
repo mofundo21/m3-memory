@@ -23,6 +23,18 @@ export async function POST(request: Request) {
     if (personError) throw personError;
     createdPersonId = person.id;
 
+    if (input.socialProfiles.length) {
+      const { error: profilesError } = await db.from("person_social_profiles").insert(
+        input.socialProfiles.map((profile) => ({
+          person_id: person.id,
+          platform: profile.platform,
+          handle_or_url: profile.handle,
+          is_how_we_met: profile.howWeMet,
+        })),
+      );
+      if (profilesError) throw profilesError;
+    }
+
     const { data: submission, error: submissionError } = await db.from("submissions").insert({
       submitter_person_id: person.id,
       status: "UNREVIEWED",

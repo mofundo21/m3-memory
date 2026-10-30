@@ -1,11 +1,17 @@
 import { z } from "zod";
 
 const optionalText = (max = 10000) => z.string().trim().max(max).optional().default("");
+const socialProfileSchema = z.object({
+  platform: z.enum(["Instagram", "TikTok", "Facebook", "X / Twitter", "Threads", "YouTube", "Snapchat", "Discord", "Twitch", "LinkedIn", "Chess.com", "Website", "Other"]),
+  handle: z.string().trim().min(1).max(300),
+  howWeMet: z.boolean().default(false),
+});
 
 export const submissionSchema = z.object({
   displayName: z.string().trim().min(1).max(120),
   email: z.string().trim().email().max(320),
   instagram: z.string().trim().max(200).optional().default(""),
+  socialProfiles: z.array(socialProfileSchema).max(12).optional().default([]),
   knownAsAtTime: optionalText(200),
   livingAtTime: optionalText(300),
   relationshipToday: optionalText(100),

@@ -21,7 +21,7 @@ export default async function SubmissionPage({
   const { data: submission } = await db
     .from("submissions")
     .select(
-      "*,persons(*),encounters(*),consent_grants(*),submission_flags(*),reviews(*),media(*),submission_tags(tags(*)),book_desk_entries(*),follow_ups(*)",
+      "*,persons(*,person_social_profiles(*)),encounters(*),consent_grants(*),submission_flags(*),reviews(*),media(*),submission_tags(tags(*)),book_desk_entries(*),follow_ups(*)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -164,6 +164,7 @@ export default async function SubmissionPage({
           <div className="admin-brand">{submission.reference_code}</div>
           <h1>{person?.display_name || "Unknown contributor"}</h1>
           <p>{person?.email || person?.contact}</p>
+          {!!person?.person_social_profiles?.length && <div className="person-socials">{person.person_social_profiles.map((profile: {id:string;platform:string;handle_or_url:string;is_how_we_met:boolean}) => <span key={profile.id}><strong>{profile.platform}</strong> {profile.handle_or_url}{profile.is_how_we_met && <em>How we met</em>}</span>)}</div>}
         </div>
         <span className="status-pill">{submission.status}</span>
       </header>

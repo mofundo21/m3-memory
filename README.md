@@ -28,6 +28,7 @@ The form autosaves text fields locally, never stores file blobs in local storage
 - `0001_initial_archive.sql` — original greenfield design reference
 - `0002_upgrade_existing_archive.sql` — additive upgrade for the existing archive
 - `0003_memory_archive_v2.sql` — additive V2 people, encounter, evidence, verification, Book Desk, follow-up, tag, event, and location structure
+- `0004_social_profiles.sql` — additive V3 multi-profile records with a per-profile “how we met” marker
 
 Never reset the live database. Apply new changes through additive migrations and preserve `submissions.original_json` as the contributor's original recollection.
 
