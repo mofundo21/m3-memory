@@ -93,7 +93,7 @@ Two new functions in `src/lib/supabase.ts`, server-only, named `consumeContribut
 - Call `getSupabaseConfig(true)`, so a missing service-role key fails closed.
 - Take no bearer or admin-token parameter.
 - Send the service-role key in both `apikey` and `Authorization`.
-- Build the body internally. `saveContributorPreferences` accepts only the four allowlisted values and sends exactly those four columns. It never sends `updated_at`; the existing trigger sets it.
+- Build the body internally. `saveContributorPreferences` accepts only the four allowlisted values and sends those four columns plus `updated_at`, set explicitly to the current time (commit f36906e). The existing trigger would also set `updated_at`; the explicit value matches the SQLite path and is harmless. No other column is ever sent.
 - Never log request bodies, tokens, or hashes.
 
 The existing `updateSubmissionPreferences` admin-token path is left unchanged.
@@ -145,7 +145,7 @@ Expired rows: step 5 ignores them. Cleanup is required before public launch, not
 | Race: admin review vs. contributor save | Accepted and documented (§3.6). Only preference fields can change, and the status gate applies to any save that reaches step 6. |
 | Partial failure after consumption | Fails closed. Contributor restarts; no second save is possible. Documented trade-off. |
 | Zero-row false success | Step 5 and step 6 both require exactly the expected rows. |
-| Change review or admin fields | Fixed four-column body. Review columns are never in any statement. |
+| Change review or admin fields | Fixed body: the four allowlisted columns plus `updated_at`. Review columns are never in any statement. |
 | Change original memory | `original_json` is never in any statement. |
 | Enumerate submissions | No list or lookup endpoint. Unknown and foreign ids return the same generic error. |
 | Bypass RLS in general | No RLS change. Service-role key used in two narrow server-only functions. |
@@ -178,12 +178,12 @@ Expired rows: step 5 ignores them. Cleanup is required before public launch, not
 Unit, pure functions:
 - Cookie value parsing: wrong length, bad characters, missing dot, extra segments, non-UUID SID, empty, non-string. None throws.
 - Token generation: 43 characters, base64url, unique across samples. The stored value is the SHA-256, never the token.
-- Save payload: extra keys are not in the built body; oversize text is truncated; unknown `attributionPreference` becomes `anonymous`; `updated_at` is never sent.
+- Save payload: extra keys are not in the built body; oversize text is truncated; unknown `attributionPreference` becomes `anonymous`; the only keys are the four allowlisted columns and `updated_at`.
 
 Supabase (mocked fetch):
 - Consume request: `DELETE`, `submission_id=eq.<encoded sid>`, `token_hash=eq.<hash>`, `expires_at=gt.<now>`, `Prefer: return=representation`, service-role key in `apikey` and `Authorization`.
 - Zero deleted rows fails. Two deleted rows fails. A deleted row with a different id fails.
-- Save request: `PATCH`, `id=eq.<encoded sid>`, `status=eq.UNREVIEWED`, `select=id`, `Prefer: return=representation`, exactly four columns in the body.
+- Save request: `PATCH`, `id=eq.<encoded sid>`, `status=eq.UNREVIEWED`, `select=id`, `Prefer: return=representation`, the four allowlisted columns plus `updated_at` in the body.
 - Zero returned rows fails (reviewed submission). Two rows fails. A row with a different id fails.
 - Missing service-role configuration throws before any request.
 - Neither request ever uses the anon key alone or an admin token.
