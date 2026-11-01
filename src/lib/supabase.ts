@@ -401,7 +401,8 @@ export async function saveSupabaseContributorPreferences(submissionId: string, f
       attribution_preference: fields.attributionPreference,
       preferred_attribution: fields.preferredAttribution,
       book_note: fields.bookNote,
-      final_notes: fields.finalNotes
+      final_notes: fields.finalNotes,
+      updated_at: new Date().toISOString()
     })
   }, fetchImpl);
   return Array.isArray(rows) && rows.length === 1 && rows[0]?.id === submissionId;

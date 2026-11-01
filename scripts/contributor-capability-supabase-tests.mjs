@@ -82,7 +82,7 @@ for (const body of [[], [{ submission_id: SID }, { submission_id: SID }], [{ sub
   assert.equal(calls[0].method, "PATCH");
   assert.equal(u.searchParams.get("id"), `eq.${SID}`);
   assert.equal(u.searchParams.get("status"), "eq.UNREVIEWED");
-  assert.deepEqual(Object.keys(calls[0].body).sort(), ["attribution_preference", "book_note", "final_notes", "preferred_attribution"]);
+  assert.deepEqual(Object.keys(calls[0].body).sort(), ["attribution_preference", "book_note", "final_notes", "preferred_attribution", "updated_at"]);
   assert.equal(calls[0].headers.authorization, `Bearer ${SERVICE}`);
 }
 // A reviewed submission matches zero rows: refused. A wrong id is refused too.
