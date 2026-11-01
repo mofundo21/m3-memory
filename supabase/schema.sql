@@ -219,3 +219,48 @@ using (public.is_m3_admin());
 -- Next.js server path with SUPABASE_SERVICE_ROLE_KEY (which bypasses RLS). Media and story drafts are admin-only
 -- and never accessible to anonymous or non-admin authenticated users. Media table defaults to default-deny
 -- (RLS enabled, no insert/update/delete grants to any role, insert through service role only).
+
+-- ---------------------------------------------------------------------------------------------------------------
+-- Contributor write capability (docs/MUSEUM_CONTRIBUTOR_CAPABILITY_DESIGN.md). One row per submission with an open
+-- contributor window. Stores SHA-256(token) only, never the raw token. Readable and writable only by the service
+-- role, which the server uses from two narrow helpers. No policy and no grant exists for anon or authenticated.
+-- ---------------------------------------------------------------------------------------------------------------
+create table if not exists public.contributor_capabilities (
+  submission_id uuid primary key,
+  token_hash text not null,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists contributor_capabilities_expires_idx on public.contributor_capabilities (expires_at);
+
+alter table public.contributor_capabilities enable row level security;
+revoke all on public.contributor_capabilities from anon, authenticated;
+-- Deliberately no policies: no application role other than the server's service key may read or write this table.
+
+-- Scheduled cleanup (open decision: scheduler). Removes expired capabilities and contributor person rows that no
+-- submission references. The 2-hour guard protects a person row that another request is creating right now.
+-- Executable only by the database owner or the service role, never by anon or authenticated.
+create or replace function public.contributor_purge_expired()
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  removed_capabilities integer := 0;
+  removed_people integer := 0;
+begin
+  delete from public.contributor_capabilities where expires_at < now();
+  get diagnostics removed_capabilities = row_count;
+
+  delete from public.persons p
+   where p.created_at < now() - interval '2 hours'
+     and not exists (select 1 from public.submissions s where s.submitter_person_id = p.id);
+  get diagnostics removed_people = row_count;
+
+  return removed_capabilities + removed_people;
+end;
+$$;
+
+revoke all on function public.contributor_purge_expired() from public, anon, authenticated;

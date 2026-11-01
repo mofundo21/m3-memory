@@ -32,6 +32,9 @@ export default function AddToMemoryPage() {
     try {
       const formData = new FormData();
 
+      // About you: captured on the write step, sent with the submission so it persists at creation.
+      formData.append('submitterName', state.submitterName);
+      formData.append('contact', state.contact);
       formData.append('memoryText', state.memoryText);
       formData.append('whereWe', state.whereWe);
       formData.append('aroundWhen', state.aroundWhen);

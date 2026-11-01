@@ -363,3 +363,55 @@ export async function updateSupabaseSubmissionPreferences(submissionId: string, 
     body: JSON.stringify(payload)
   }, fetchImpl);
 }
+
+// ---- Contributor capability store. Narrow, service-role only. See docs/MUSEUM_CONTRIBUTOR_CAPABILITY_DESIGN.md. ----
+// These four functions are the only service-role writes for contributor capabilities. They never accept a bearer
+// or admin token, and every filter is built from values the caller verified. Row counts are checked, so a
+// zero-row or wrong-row response is a failure, not a success.
+
+export async function insertSupabaseCapability(submissionId: string, tokenHash: string, expiresAt: string, fetchImpl: FetchLike = fetch) {
+  const config = getSupabaseConfig(true);
+  await request(`${config.url}/rest/v1/contributor_capabilities`, {
+    method: "POST",
+    headers: { ...headers(config.serviceRoleKey), prefer: "return=minimal" },
+    body: JSON.stringify({ submission_id: submissionId, token_hash: tokenHash, expires_at: expiresAt })
+  }, fetchImpl);
+}
+
+/** Consume-first: the DELETE is the single-use gate. Returns true only when exactly the expected row was removed. */
+export async function consumeSupabaseCapability(submissionId: string, tokenHash: string, nowIso: string, fetchImpl: FetchLike = fetch) {
+  const config = getSupabaseConfig(true);
+  const url = `${config.url}/rest/v1/contributor_capabilities?submission_id=eq.${encodeURIComponent(submissionId)}`
+    + `&token_hash=eq.${encodeURIComponent(tokenHash)}&expires_at=gt.${encodeURIComponent(nowIso)}&select=submission_id`;
+  const rows = await request(url, {
+    method: "DELETE",
+    headers: { ...headers(config.serviceRoleKey), prefer: "return=representation" }
+  }, fetchImpl);
+  return Array.isArray(rows) && rows.length === 1 && rows[0]?.submission_id === submissionId;
+}
+
+/** Save the four contributor-owned fields. Guarded by status: only an UNREVIEWED row can change. */
+export async function saveSupabaseContributorPreferences(submissionId: string, fields: { attributionPreference: string; preferredAttribution: string | null; bookNote: string | null; finalNotes: string | null }, fetchImpl: FetchLike = fetch) {
+  const config = getSupabaseConfig(true);
+  const url = `${config.url}/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}&status=eq.UNREVIEWED&select=id`;
+  const rows = await request(url, {
+    method: "PATCH",
+    headers: { ...headers(config.serviceRoleKey), prefer: "return=representation" },
+    body: JSON.stringify({
+      attribution_preference: fields.attributionPreference,
+      preferred_attribution: fields.preferredAttribution,
+      book_note: fields.bookNote,
+      final_notes: fields.finalNotes
+    })
+  }, fetchImpl);
+  return Array.isArray(rows) && rows.length === 1 && rows[0]?.id === submissionId;
+}
+
+/** Compensation for a failed creation: capability, submission, then person. Each delete is keyed by a verified id. */
+export async function deleteSupabaseSubmissionRecords(submissionId: string, personId: string, fetchImpl: FetchLike = fetch) {
+  const config = getSupabaseConfig(true);
+  const auth = { ...headers(config.serviceRoleKey), prefer: "return=minimal" };
+  await request(`${config.url}/rest/v1/contributor_capabilities?submission_id=eq.${encodeURIComponent(submissionId)}`, { method: "DELETE", headers: auth }, fetchImpl);
+  await request(`${config.url}/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, { method: "DELETE", headers: auth }, fetchImpl);
+  await request(`${config.url}/rest/v1/persons?id=eq.${encodeURIComponent(personId)}`, { method: "DELETE", headers: auth }, fetchImpl);
+}

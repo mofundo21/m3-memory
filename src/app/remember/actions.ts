@@ -1,8 +1,26 @@
 "use server";
 
-import { updateSubmissionPreferences, createSubmission, insertMediaRows, validateMediaUpload } from "@/lib/db";
+import {
+  deleteSubmissionRecords,
+  insertMediaRows,
+  normalizeSubmissionRecord,
+  persistNormalizedSubmission,
+  validateMediaUpload
+} from "@/lib/db";
 import { uploadSupabaseMedia, getPersistenceMode } from "@/lib/supabase";
+import {
+  CONTRIBUTOR_ERROR_MESSAGE,
+  cookieNameFor,
+  cookieOptions,
+  formatCookieValue,
+  isCanonicalSubmissionId,
+  issueCapability,
+  logContributorEvent,
+  redeemCapability,
+  sanitizePreferences
+} from "@/lib/contributorCapability";
 import type { SubmissionInput } from "@/lib/types";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export async function submitMemoryAction(formData: FormData) {
@@ -38,7 +56,34 @@ export async function submitMemoryAction(formData: FormData) {
     redirect("/remember/write?error=missing");
   }
 
-  const submissionId = await createSubmission(input);
+  // Normalize once. The SID and person id are server-generated here and never taken from the client.
+  // Order (design v3): capability row first, then the submission, both keyed by the same SID. Any failure
+  // removes whatever was created, using the ids already in hand, and returns one fixed redirect.
+  let record: ReturnType<typeof normalizeSubmissionRecord>;
+  try {
+    record = normalizeSubmissionRecord(input);
+  } catch {
+    logContributorEvent("issue-failed");
+    redirect("/remember/details?error=save");
+  }
+  const submissionId = record.id;
+  const personId = record.personId;
+
+  let capabilityToken: string;
+  try {
+    capabilityToken = await issueCapability(submissionId, new Date());
+    await persistNormalizedSubmission(record);
+  } catch {
+    logContributorEvent("issue-failed");
+    try {
+      await deleteSubmissionRecords(submissionId, personId);
+    } catch {
+      logContributorEvent("compensation-failed");
+    }
+    redirect("/remember/details?error=save");
+  }
+  const jar = await cookies();
+  jar.set(cookieNameFor(submissionId), formatCookieValue(submissionId, capabilityToken), cookieOptions());
 
   const mediaFiles = formData.getAll("media") as File[];
   if (mediaFiles.length > 0 && getPersistenceMode() === "supabase") {
@@ -83,16 +128,27 @@ export async function submitMemoryAction(formData: FormData) {
 }
 
 export async function updatePreferencesAction(submissionId: string, formData: any) {
-  try {
-    await updateSubmissionPreferences(submissionId, {
-      attributionPreference: formData.attributionPreference,
-      preferredAttribution: formData.preferredAttribution,
-      bookNote: formData.bookNote,
-      finalNotes: formData.finalNotes
-    });
+  // The submission id argument is untrusted. It only selects which cookie to read, and the redeem step
+  // requires the cookie's own id to match it. Every database predicate uses the cookie's id.
+  const jar = await cookies();
+  const name = isCanonicalSubmissionId(submissionId) ? cookieNameFor(submissionId) : null;
+  const value = name ? jar.get(name)?.value : undefined;
 
-    redirect("/thanks");
-  } catch (error: any) {
-    throw new Error(`Failed to save preferences: ${error.message}`);
+  let saved = false;
+  try {
+    saved = await redeemCapability(submissionId, value, sanitizePreferences(formData ?? {}), new Date());
+  } catch {
+    logContributorEvent("backend-error");
+    saved = false;
   }
+
+  // The capability is spent whether or not the save succeeded. Clear the cookie in every case.
+  if (name) jar.set(name, "", cookieOptions(0));
+
+  if (!saved) {
+    throw new Error(CONTRIBUTOR_ERROR_MESSAGE);
+  }
+
+  // redirect() throws; it must sit outside the try block or the catch turns it into an error.
+  redirect("/thanks");
 }

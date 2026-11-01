@@ -1,0 +1,595 @@
+/* MOFUNDO Museum: one cinematic sequence, four scenes (docs/MOFUNDO_MUSEUM_DESIGN_BIBLE.md). */
+
+.museum-root {
+  position: relative;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Skip link: hidden until focused. */
+.museum-skip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  padding: 12px 16px;
+  background: var(--paper);
+  color: var(--bg);
+  font-size: 14px;
+  font-weight: 600;
+  transform: translateY(-120%);
+}
+
+.museum-skip:focus {
+  transform: translateY(0);
+  color: var(--bg);
+}
+
+/* Persistent chrome: leave link, text mode and sound control. Minimal and quiet. */
+.museum-chrome {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: max(20px, env(safe-area-inset-top)) max(48px, env(safe-area-inset-right)) 20px max(48px, env(safe-area-inset-left));
+  pointer-events: none;
+}
+
+.museum-chrome > * {
+  pointer-events: auto;
+}
+
+.museum-chrome-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.museum-text-toggle {
+  min-height: 44px;
+  padding: 0 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.museum-text-toggle[aria-pressed='true'] {
+  color: var(--text);
+}
+
+.museum-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.museum-leave {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.museum-sound {
+  min-height: 44px;
+  padding: 0 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.museum-sound[aria-pressed='true'] {
+  color: var(--text);
+}
+
+.museum-sound:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.museum-leave:focus-visible,
+.museum-sound:focus-visible,
+.museum-text-toggle:focus-visible,
+.museum-enter-button:focus-visible,
+.museum-cta:focus-visible,
+.museum-skip:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
+}
+
+/* One tall track; the stage inside it is sticky. Track height comes from --museum-track-vh (set from config). */
+.museum-track {
+  position: relative;
+  height: calc(var(--museum-track-vh, 5) * 100vh);
+  height: calc(var(--museum-track-vh, 5) * 100dvh);
+}
+
+.museum-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  /* One shared warm light behind the whole stage, so every layer sits in the same space. */
+  background: radial-gradient(ellipse at 50% 70%, rgba(150, 110, 70, 0.22), rgba(11, 16, 18, 0) 62%), var(--bg);
+  isolation: isolate;
+}
+
+/* Decorative layer: aria-hidden, nothing focusable inside. */
+.museum-visual {
+  position: absolute;
+  inset: 0;
+}
+
+/* Controls layer: the only focusable elements on the stage. Pointer events pass through except on controls. */
+.museum-controls {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.museum-scene {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Shared text helpers. */
+.museum-tag {
+  display: inline-block;
+  margin-left: 12px;
+  padding: 2px 6px;
+  border: 1px solid var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.museum-name,
+.museum-name-second {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 42%;
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(56px, 14vw, 180px);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  transform-origin: center;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* ENTER gate: wordmark is decorative, button is the only control. */
+.museum-enter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.museum-enter-button {
+  pointer-events: auto;
+}
+
+.museum-wordmark {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: 0.2em;
+}
+
+.museum-tagline {
+  margin: 0 0 24px;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.museum-enter-button {
+  min-height: 44px;
+  padding: 12px 32px;
+  background: transparent;
+  border: 1px solid var(--muted);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* 01 YERIEL */
+.museum-portrait {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transform-origin: center;
+}
+
+/* Vignette keeps type legible over the image without a flat overlay. */
+.museum-beam {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, rgba(11, 16, 18, 0) 30%, rgba(11, 16, 18, 0.85) 100%),
+    linear-gradient(180deg, rgba(11, 16, 18, 0.5), rgba(11, 16, 18, 0.2) 40%, rgba(11, 16, 18, 0.7));
+}
+
+.museum-placeholder-note {
+  position: absolute;
+  left: 48px;
+  bottom: 40px;
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.museum-meta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 60%;
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.museum-fragment {
+  position: absolute;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.museum-fragment-0 {
+  left: 8%;
+  top: 22%;
+}
+
+.museum-fragment-1 {
+  right: 8%;
+  top: 30%;
+}
+
+.museum-fragment-2 {
+  left: 10%;
+  top: 74%;
+}
+
+/* 02 MOFUNDO */
+.museum-plate {
+  position: absolute;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+}
+
+.museum-waveform {
+  position: absolute;
+  left: 0;
+  bottom: 22%;
+  width: 100%;
+  height: 60px;
+}
+
+.museum-waveform path {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.2;
+}
+
+/* 03 HOW DO YOU REMEMBER HIM? */
+.museum-question {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 40%;
+  margin: 0;
+  padding: 0 24px;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(32px, 5.6vw, 88px);
+  line-height: 1.05;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.7);
+}
+
+.museum-evidence {
+  position: absolute;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.museum-caveat {
+  position: absolute;
+  margin: 0;
+  font-family: var(--font-script);
+  font-size: clamp(22px, 3vw, 30px);
+  color: var(--text);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+}
+
+.museum-caveat-attribution {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* 04 JOIN THE STORY */
+.museum-counters {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 14%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.museum-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.museum-counter-value {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(40px, 7vw, 80px);
+  line-height: 1;
+}
+
+.museum-counter-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.museum-counters-tag {
+  grid-column: 1 / -1;
+  justify-self: center;
+  margin: 0;
+}
+
+.museum-message {
+  position: absolute;
+  inset: 0;
+}
+
+.museum-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 44%;
+  margin: 0;
+  padding: 0 24px;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(32px, 6vw, 80px);
+  line-height: 1.1;
+}
+
+.museum-join {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 30%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  text-align: center;
+}
+
+/* CTA sits in the controls layer, below the join block. Inert (and invisible) until its beat. */
+.museum-cta-slot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 64%;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.museum-cta-slot .museum-cta {
+  pointer-events: auto;
+}
+
+.museum-cta-slot[inert] {
+  pointer-events: none;
+}
+
+.museum-join-heading {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(44px, 8vw, 112px);
+  line-height: 1;
+}
+
+.museum-join-explanation {
+  max-width: 52ch;
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.museum-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 0 32px;
+  background: var(--paper);
+  color: var(--bg);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.museum-cta:hover {
+  color: var(--bg);
+  background: var(--purple-soft);
+}
+
+/* Text panel: the same content in order, shown by "Read as text". Replaces the sequence while open. */
+.museum-text-panel {
+  display: none;
+}
+
+.museum-root.is-text .museum-track,
+.museum-root.is-text .museum-skip {
+  display: none;
+}
+
+.museum-root.is-text .museum-text-panel {
+  display: block;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 120px 24px 96px;
+}
+
+.museum-text-panel h2 {
+  margin: 48px 0 12px;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1.15;
+}
+
+.museum-text-panel ul {
+  padding-left: 20px;
+  color: var(--muted);
+}
+
+.museum-text-panel p {
+  line-height: 1.7;
+}
+
+.museum-text-panel .museum-cta {
+  margin-top: 24px;
+}
+
+/* Mobile: deliberate adaptation, not a scaled desktop. */
+@media (max-width: 600px) {
+  .museum-chrome {
+    padding: max(16px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) 16px max(20px, env(safe-area-inset-left));
+  }
+
+  .museum-counters {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .museum-fragment-1 {
+    right: 8%;
+    top: 14%;
+  }
+
+  .museum-join-explanation {
+    font-size: 16px;
+  }
+}
+
+/* Reduced motion: the sequence still scrolls, but nothing animates on its own. */
+@media (prefers-reduced-motion: reduce) {
+  .museum-root * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Cinematic layer (WebGL, Scenes 01 and 02 only). Decorative and under the text. */
+.museum-webgl {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.museum-webgl canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* In the cinematic tier the canvas draws the portrait and the Scene 02 plates. The DOM copies are hidden
+   so nothing is drawn twice. Text, the beam vignette, and every DOM-only element stay. */
+.museum-root.is-cinematic .museum-scene-01 .museum-portrait,
+.museum-root.is-cinematic .museum-scene-02 .museum-plate {
+  display: none;
+}
+
+/* Scene 03 fragments: soft-edged, so no photograph reads as a card. */
+.museum-plate-soft {
+  box-shadow: none;
+  aspect-ratio: 3 / 4;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 52%, transparent 76%);
+  mask-image: radial-gradient(ellipse at center, #000 52%, transparent 76%);
+}

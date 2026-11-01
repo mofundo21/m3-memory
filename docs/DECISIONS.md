@@ -53,3 +53,33 @@ Reason: RLS and column-scoped grants should protect contributor originals even i
 Decision: Supabase review updates must not include `reviews.submission_id` in the PATCH body. Inserts include `submission_id`; updates use it only as the row filter and patch mutable review fields.
 
 Reason: The schema intentionally grants authenticated admins update rights only to review fields and status metadata. A real Supabase smoke test caught a 403 when application code tried to patch `submission_id`, proving the column-scoped grant is working and should remain part of the safety model.
+
+## 2026-10-31: Museum Acts 03 and 04 use placeholders until a public-safe archive view exists
+
+Decision: The MOFUNDO museum experience (Acts 03 "People × Places × Sound" and 04 "The Story So Far") renders clearly marked placeholder data from a typed adapter. No real people, encounters, or counters are shown until a public-safe view or API exists.
+
+Reason: The archive tables are default-deny for `anon` under RLS. Exposing approved data publicly requires a Tier 3 review of grants, RLS, and contributor privacy. Placeholders keep the museum buildable without weakening access controls or inventing personal history.
+
+## 2026-10-31: Museum transition targets the real interview start
+
+Decision: The museum's final CTA ("Tell me how we met") links to `/remember/write`, the real beginning of the interview. Route naming is not restructured now.
+
+Reason: `/submit` only redirects to `/remember`. Linking directly to the interview start keeps the transition honest and avoids touching existing routes.
+
+## 2026-10-31: Museum audio is configured, not bundled
+
+Decision: Museum audio is configured in `src/lib/museumAudioConfig.ts` with a placeholder path (`/media/museum-ambient.mp3`). No external track is downloaded or committed. Audio is off by default, never autoplays, and the museum must work with the file absent.
+
+Reason: Yeriel will replace the placeholder with his own MOFUNDO music. Bundling a third-party track would need licensing review and would conflict with that plan.
+
+## 2026-10-31: Museum is one cinematic sequence of four scenes, not an interactive exhibit
+
+Decision: The museum is a guided, scroll-driven sequence with four scenes: 01 YERIEL, 02 MOFUNDO, 03 HOW DO YOU REMEMBER HIM?, 04 JOIN THE STORY. The only controls are ENTER, the persistent sound toggle, and the final TELL ME HOW WE MET → link into `/remember/write`. Clickable constellation nodes, museum labels, act navigation, and the separate Story So Far scene are removed. Archive counters move into Scene 04.
+
+Reason: The goal is a single cinematic journey that ends by inviting contribution. Interactive exploration would split attention from the story and weaken the final call to action.
+
+## 2026-10-31: Museum uses labeled placeholder images
+
+Decision: Until approved photographs exist, the museum uses generated placeholder plates under `public/media/museum/placeholders/`. Each plate says PLACEHOLDER. No faces, real places, or dates are generated.
+
+Reason: Keeps the sequence buildable and reviewable without inventing or fabricating personal imagery.

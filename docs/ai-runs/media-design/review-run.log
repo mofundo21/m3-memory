@@ -1,0 +1,2738 @@
+OpenAI Codex v0.166.0
+--------
+workdir: C:\Users\yerie\m3-memory
+model: gpt-5.6-sol
+provider: openai
+approval: never
+sandbox: read-only
+reasoning effort: low
+reasoning summaries: none
+session id: 01a1942e-dc7e-7383-bc61-4c7981e70baf
+--------
+user
+You are the independent cross-model security reviewer (Tier 3). Read-only. Do NOT edit files.
+
+Review the DESIGN in docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md against the current code it describes: src/app/remember/actions.ts (media block), src/lib/supabase.ts (uploadSupabaseMedia, insertSupabaseMediaRows), src/lib/db.ts (validateMediaUpload, insertMediaRows, ALLOWED_MIME_TYPES, limits), supabase/schema.sql (media table RLS), and src/app/remember/MediaPicker.tsx (client-side selection).
+
+Assess, with file:line evidence:
+1. Is the recommended upload-inside-creation design sound? Any path where an upload occurs for a submission the contributor does not own?
+2. Magic-byte validation: is the proposed check sufficient, or can an attacker still store a non-image or a polyglot that a browser would interpret as HTML or script when served from the bucket? Recommend serving headers.
+3. Compensation: is the proposed rollback complete? What if the storage delete itself fails? Is the sweep sufficient?
+4. Path safety: object keys, name sanitization, overwrite prevention (is upsert really disabled in the current helper?).
+5. Metadata: EXIF GPS. Is "reject JPEGs with GPS" implementable reliably? Describe the failure cases (GPS in XMP, in MakerNote, in PNG tEXt, in WebP XMP). State what Option A (re-encoding) would need, without installing anything.
+6. Abuse: rate limits. Is the surfaced set of options complete? Recommend the smallest reasonable option.
+7. Storage bucket privacy: what must be verified, and what the repo can and cannot prove.
+8. RLS and storage policy boundaries: confirm the design adds no policy or grant.
+9. Missing threats.
+10. Legitimate blockers that must be resolved before implementation.
+
+Output:
+- First line: VERDICT: APPROVE FOR IMPLEMENTATION | APPROVE WITH REQUIRED CHANGES | NOT READY
+- Numbered findings: severity, evidence, required change.
+- Decisions that need the user (list).
+- Verified-correct items.
+No padding.
+
+codex
+I’m using the M3 archive/security instructions plus the project’s graph report and canonical AI/integrity docs. I’ll keep this strictly read-only and cite exact lines.
+exec
+"C:\\Users\\yerie\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe" -Command "Get-Content -Raw 'C:\\Users\\yerie\\m3-memory\\.agents\\skills\\m3-memory-archive\\SKILL.md'; Get-Content -Raw 'graphify-out\\GRAPH_REPORT.md'; Get-Content -Raw 'docs\\AI_SYSTEM.md'; Get-Content -Raw 'docs\\HISTORICAL_INTEGRITY.md'" in C:\Users\yerie\m3-memory
+ succeeded in 147ms:
+---
+name: m3-memory-archive
+description: Protect source memories and historical provenance in M3 Memory. Use whenever designing, modifying, reviewing, importing, deleting, or exporting contributor submissions or archival records.
+---
+
+# M3 Memory Archive
+
+Contributor submissions are immutable historical source records.
+
+Rules:
+
+- Original submissions must never be silently rewritten.
+- Corrections belong in separate review records.
+- AI interpretation belongs in separate records.
+- AI-generated prose is never historical evidence.
+- Conflicts must be flagged, not silently resolved.
+- Preserve timestamps and provenance.
+- Never delete historical records casually.
+
+Do not remove necessary security, accessibility, validation, backups, tests, error handling, or historical data integrity controls.
+
+
+# Graph Report - m3-memory  (2026-10-31)
+
+## Corpus Check
+- 64 files Â· ~153,404 words
+- Verdict: corpus is large enough that graph structure adds value.
+
+## Summary
+- 201 nodes Â· 312 edges Â· 13 communities detected
+- Extraction: 79% EXTRACTED Â· 21% INFERRED Â· 0% AMBIGUOUS Â· INFERRED: 67 edges (avg confidence: 0.8)
+- Token cost: 0 input Â· 0 output
+
+## Community Hubs (Navigation)
+- [[_COMMUNITY_Community 0|Community 0]]
+- [[_COMMUNITY_Community 1|Community 1]]
+- [[_COMMUNITY_Community 2|Community 2]]
+- [[_COMMUNITY_Community 3|Community 3]]
+- [[_COMMUNITY_Community 4|Community 4]]
+- [[_COMMUNITY_Community 5|Community 5]]
+- [[_COMMUNITY_Community 6|Community 6]]
+- [[_COMMUNITY_Community 8|Community 8]]
+- [[_COMMUNITY_Community 9|Community 9]]
+- [[_COMMUNITY_Community 10|Community 10]]
+- [[_COMMUNITY_Community 11|Community 11]]
+- [[_COMMUNITY_Community 12|Community 12]]
+- [[_COMMUNITY_Community 14|Community 14]]
+
+## God Nodes (most connected - your core abstractions)
+1. `getPersistenceMode()` - 18 edges
+2. `getSupabaseConfig()` - 16 edges
+3. `request()` - 16 edges
+4. `headers()` - 14 edges
+5. `getDb()` - 12 edges
+6. `requireAdmin()` - 10 edges
+7. `login()` - 10 edges
+8. `requireSupabaseAdminToken()` - 10 edges
+9. `getAdminAuthMode()` - 10 edges
+10. `isAdminAuthenticated()` - 9 edges
+
+## Surprising Connections (you probably didn't know these)
+- `resolve()` --calls--> `getDb()`  [INFERRED]
+  scripts\supabase-unit-tests.mjs â†’ src\lib\db.ts
+- `submitMemoryAction()` --calls--> `handleSubmit()`  [INFERRED]
+  src\app\remember\actions.ts â†’ src\app\remember\details\page.tsx
+- `AdminPage()` --calls--> `listSubmissions()`  [INFERRED]
+  src\app\admin\page.tsx â†’ src\lib\db.ts
+- `GET()` --calls--> `getSupabaseConfig()`  [INFERRED]
+  src\app\admin\media\[mediaId]\route.ts â†’ src\lib\supabase.ts
+- `AdminSubmissionsPage()` --calls--> `listSubmissions()`  [INFERRED]
+  src\app\admin\submissions\page.tsx â†’ src\lib\db.ts
+
+## Communities
+
+### Community 0 - "Community 0"
+Cohesion: 0.15
+Nodes (20): AdminPage(), createStory(), saveReview(), digest(), expectedPassword(), getAdminToken(), isAdminAuthenticated(), isLocalAdminCookie() (+12 more)
+
+### Community 1 - "Community 1"
+Cohesion: 0.24
+Nodes (23): createStoryDraft(), createSubmission(), getDb(), getStoryDrafts(), getSubmission(), getSubmissionMedia(), insertMediaRows(), listSubmissions() (+15 more)
+
+### Community 2 - "Community 2"
+Cohesion: 0.33
+Nodes (19): createSupabaseStoryDraft(), createSupabaseSubmission(), getSupabaseConfig(), getSupabaseStoryDrafts(), getSupabaseSubmission(), getSupabaseSubmissionMedia(), getSupabaseUser(), headers() (+11 more)
+
+### Community 3 - "Community 3"
+Cohesion: 0.2
+Nodes (11): cameraAt(), clamp01(), sceneActive(), sceneOpacity(), smoothstep(), within(), fadeIn(), fadeOut() (+3 more)
+
+### Community 4 - "Community 4"
+Cohesion: 0.31
+Nodes (8): actionFields(), clickButton(), decode(), fillField(), form(), postForm(), submitPublicMemory(), waitForPath()
+
+### Community 5 - "Community 5"
+Cohesion: 0.33
+Nodes (1): resolve()
+
+### Community 6 - "Community 6"
+Cohesion: 0.33
+Nodes (3): logoutAction(), logout(), logoutAction()
+
+### Community 8 - "Community 8"
+Cohesion: 0.4
+Nodes (2): CinematicIntro(), useCinematicAvailability()
+
+### Community 9 - "Community 9"
+Cohesion: 0.83
+Nodes (3): injectCSS(), mountScrollWorld(), seedParticles()
+
+### Community 10 - "Community 10"
+Cohesion: 0.5
+Nodes (2): handleSubmit(), updatePreferencesAction()
+
+### Community 11 - "Community 11"
+Cohesion: 1.0
+Nodes (2): ext(), walk()
+
+### Community 12 - "Community 12"
+Cohesion: 1.0
+Nodes (2): corner_color(), knock()
+
+### Community 14 - "Community 14"
+Cohesion: 0.67
+Nodes (1): handleSubmit()
+
+## Knowledge Gaps
+- **Thin community `Community 5`** (6 nodes): `makeFetch()`, `supabase-unit-tests.mjs`, `resolve()`, `response()`, `restoreEnv()`, `walk()`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 8`** (5 nodes): `CinematicIntro()`, `ScrollProgressTracker()`, `useCinematicAvailability()`, `CinematicIntro.tsx`, `useCinematicAvailability.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 10`** (4 nodes): `handleSubmit()`, `updatePreferencesAction()`, `actions.ts`, `content.tsx`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 11`** (3 nodes): `ext()`, `lint.mjs`, `walk()`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 12`** (3 nodes): `corner_color()`, `knock()`, `knockout.py`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 14`** (3 nodes): `handleAddMedia()`, `handleSubmit()`, `page.tsx`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+
+## Suggested Questions
+_Questions this graph is uniquely positioned to answer:_
+
+- **Why does `getPersistenceMode()` connect `Community 1` to `Community 0`, `Community 2`?**
+  _High betweenness centrality (0.056) - this node is a cross-community bridge._
+- **Why does `getDb()` connect `Community 1` to `Community 5`?**
+  _High betweenness centrality (0.027) - this node is a cross-community bridge._
+- **Why does `resolve()` connect `Community 5` to `Community 1`?**
+  _High betweenness centrality (0.021) - this node is a cross-community bridge._
+- **Are the 15 inferred relationships involving `getPersistenceMode()` (e.g. with `submitMemoryAction()` and `getAdminToken()`) actually correct?**
+  _`getPersistenceMode()` has 15 INFERRED edges - model-reasoned connections that need verification._
+# AI Development System
+
+M3 Memory uses coordinated AI-assisted development across Claude Code and OpenAI Codex.
+
+Primary invariant: whoever builds should not be the only reviewer.
+
+If Codex builds, Claude reviews. If Claude builds, Codex reviews.
+
+## Standard Lifecycle
+
+For substantial work:
+
+1. Request
+2. Classify task
+3. Ponytail / scope check
+4. Graphify repository context
+5. Primary model plan
+6. Second model adversarial review
+7. Plan revision
+8. Build
+9. Second model cross-inspection
+10. Test
+11. Fix if required
+12. Final report
+
+Not every tiny task needs the full expensive loop.
+
+## Cost-Aware Task Tiers
+
+Start with the lowest-cost model reasonably capable of the task. Escalate when confidence is low, tests fail repeatedly, architecture is ambiguous, security or data integrity is involved, historical evidence could be altered, or the cheaper model cannot solve the problem after a reasonable attempt.
+
+Do not burn premium reasoning on mechanical work. Do not keep retrying a cheap model indefinitely when it is clearly failing.
+
+Before substantial work, declare:
+
+- Task tier
+- Risk areas touched
+- Required reviewer
+- Graphify checked
+- Ponytail checked
+
+### Tier 0: Mechanical / Cheap
+
+Use the cheapest competent model available. Do not invoke Claude + Codex cross-review.
+
+Examples:
+
+- formatting
+- renaming
+- simple documentation cleanup
+- boilerplate
+- repetitive edits
+- straightforward file creation
+- simple test-data generation
+- lint fixes where the fix is obvious
+
+### Tier 1: Normal
+
+Use a cost-efficient coding model. Cross-model review is optional. Escalate only when uncertainty or risk appears.
+
+Examples:
+
+- ordinary components
+- simple UI
+- routine CRUD
+- straightforward tests
+- README changes
+- common refactors
+
+### Tier 2: Important
+
+Use a stronger coding/reasoning model. Builder and reviewer should be different models when practical.
+
+Examples:
+
+- meaningful application features
+- database queries
+- submission workflow
+- admin workflow
+- significant refactors
+- media handling
+
+### Tier 3: Critical
+
+Use the strongest appropriate models. Never route these tasks to a weak model solely to save usage.
+
+Examples:
+
+- authentication
+- authorization
+- Row Level Security
+- database schema/migrations affecting historical records
+- contributor privacy
+- historical-source mutation
+- deletion behavior
+- upload security
+- secrets
+- production deployment permissions
+- major architectural changes
+
+Required lifecycle:
+
+1. Primary model
+2. Second model adversarial review
+3. Revision
+4. Implementation
+5. Other model code review
+6. Test
+
+## Tool Roles
+
+- Claudex Loop: bounded cross-provider plan review, build, inspection, and preserved logs.
+- Ponytail: anti-bloat and anti-overengineering scope gate.
+- Graphify: repository knowledge graph for efficient agent context.
+- OmniRoute: future model routing and fallback layer. Keep it separate from the direct Claude/Codex loop until routing, fallback, failure behavior, logs, and provider authentication are proven.
+
+## Logs
+
+Preserve plans and reviews under `docs/ai-runs/`.
+
+Use identifiable model roles:
+
+- `claude-planner`
+- `claude-builder`
+- `claude-reviewer`
+- `codex-planner`
+- `codex-builder`
+- `codex-reviewer`
+
+Do not mark a cross-model workflow successful unless both models actually ran and their outputs were captured.
+
+## OmniRoute Policy
+
+Subscription-authenticated services and API-billed services are distinct unless official tool documentation proves otherwise.
+
+Never automatically downgrade security-, data-integrity-, privacy-, or architecture-sensitive tasks to a weaker model simply because it is cheaper.
+
+OmniRoute may be tested independently after direct Claude/Codex operation works. It must not be inserted into the main orchestration path until routing, fallback, failure behavior, logs, and provider authentication are verified.
+
+OmniRoute negative findings are operational guardrails, not dead documentation. Keep a concise record of failed installs, unsafe defaults, and deferred routing rules so future sessions do not repeat them.
+
+# Historical Integrity Policy
+
+Contributor submissions are immutable historical source records.
+
+## Source Record Rules
+
+- Original submissions must never be silently rewritten.
+- Corrections belong in separate review records.
+- Yeriel notes belong in separate review records.
+- AI interpretation belongs in separate AI observation records.
+- AI-generated prose is never historical evidence.
+- Conflicts must be flagged, not silently resolved.
+- Preserve timestamps and provenance.
+- Never delete historical records casually.
+
+## Layer Separation
+
+Keep these layers distinct:
+
+- Contributor memory
+- Yeriel memory and notes
+- AI observation
+- Confirmed evidence
+- Story draft
+
+Do not merge these layers in the database, UI, exports, or prompts.
+
+## Story Drafting
+
+Narrative drafts may only use reviewed material. A draft must identify its inputs and cannot promote its own output to historical fact or approved book material.
+
+Final authority is Yeriel.
+
+
+
+codex
+Tier 3 confirmed: upload security, privacy, deletion compensation, and RLS boundaries. Graphify is checked; this is review-only, so no Ponytail implementation gate or graph update is needed.
+exec
+"C:\\Users\\yerie\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe" -Command '$files = @('"'docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md','src/app/remember/actions.ts','src/lib/supabase.ts','src/lib/db.ts','supabase/schema.sql','src/app/remember/MediaPicker.tsx'); foreach ("'$f in $files) { Write-Output "### $f"; $n=0; Get-Content $f | ForEach-Object { $n++; '"'{0,5}: {1}' -f "'$n, $_ } }' in C:\Users\yerie\m3-memory
+ succeeded in 790ms:
+### docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md
+    1: # Contributor Media Upload: Security Design (Tier 3, separate from the preference capability)
+    2: 
+    3: Status: **Design only. Not implemented. Needs its own cross-model review before implementation.**
+    4: Problem: in Supabase mode a contributor's media upload fails. `submitMemoryAction` uploads each file with the service role (`uploadSupabaseMedia`, `src/lib/supabase.ts`), but then calls `insertMediaRows` (`src/lib/db.ts:539`), which requires an admin token. The action catches the error and redirects to `/remember/details?error=media`. The submission already exists, so the contributor either loses the media or resubmits and creates a duplicate.
+    5: 
+    6: ## 1. Current code facts (verified in this repo)
+    7: 
+    8: | Fact | Where |
+    9: |---|---|
+   10: | Uploads run after `createSubmission` | `src/app/remember/actions.ts` (media block after `createSubmission`) |
+   11: | Storage upload uses the service-role key | `uploadSupabaseMedia`, `src/lib/supabase.ts` |
+   12: | Object path is `submissions/<sid>/<uuid>-<sanitized name>` | same |
+   13: | Media row insert requires an admin token | `insertMediaRows` â†’ `insertSupabaseMediaRows` (`src/lib/db.ts:539`, `src/lib/supabase.ts`) |
+   14: | Allowed MIME types come from the browser's `file.type` | `ALLOWED_MIME_TYPES` in `src/lib/db.ts:516` |
+   15: | No magic-byte (content) check | none |
+   16: | Limits: 8 MB per file, 5 files | `src/lib/db.ts:514-515` |
+   17: | Validation runs after the submission exists | `validateMediaUpload` is called inside the media block |
+   18: | EXIF is not stripped | none in the code |
+   19: | Storage bucket `submission-media` is not defined in `supabase/schema.sql` | its visibility and policies are set outside the repo and cannot be verified here |
+   20: | `media` table: RLS on, admin-read only, no anon or authenticated write | `supabase/schema.sql` |
+   21: 
+   22: ## 2. Threats
+   23: 
+   24: | Threat | Current exposure | Mitigation in this design |
+   25: |---|---|---|
+   26: | Media row insert fails for contributors | **Certain** (admin token required) | Insert under the service role, inside the same server action as the upload, with no client-callable endpoint |
+   27: | Spoofed MIME type (e.g. HTML sent as `image/jpeg`) | Possible: MIME comes from the client | Server checks magic bytes (JPEG `FF D8 FF`, PNG `89 50 4E 47`, WebP `RIFF....WEBP`) and rejects mismatches |
+   28: | Oversized or many files (storage cost, memory) | Limited by 8 MB and 5 files, checked after the submission is created | Check size and count **before** creating anything; also cap total bytes per request |
+   29: | Path traversal or name injection | Low: UUID prefix plus sanitized name | Storage key uses only server-generated UUID plus a fixed extension derived from the verified type. The client file name is stored as metadata only, length-capped and stripped of control characters |
+   30: | Overwriting existing objects | Low: UUID names | Upload without upsert. A conflict is an error, not an overwrite |
+   31: | Cross-submission access | Path contains `sid`; rows keyed by `submission_id` | Object key is built from the verified SID only (Â§3). No read path for contributors |
+   32: | Malicious image metadata: GPS coordinates, device serials, embedded thumbnails | **Real privacy exposure**; EXIF is kept | Strip metadata by re-encoding the image on the server. Requires an image library (**needs approval**; see Â§6). Until then, reject JPEGs that contain an EXIF APP1 GPS tag |
+   33: | Polyglot files (valid image plus appended script) | Low when served as `image/*` with `nosniff` | Re-encoding (Â§6) removes appended data. Serve only with the verified type and `X-Content-Type-Options: nosniff` |
+   34: | Abandoned uploads (objects with no row) | **Exists**: upload succeeds, row insert fails | Compensating delete of uploaded objects on any later failure. A periodic sweep deletes objects under `submissions/` that have no `media` row after 24 h |
+   35: | Partial creation (submission exists, media not) | **Exists** | Validate everything first; then create submission, then capability, then upload and insert media. On any failure after creation, compensate: delete objects, media rows, the capability row, the person row, and the submission row |
+   36: | Metadata altered after upload | None possible today | Contributors have no path to change media rows or objects. Only admins read them. Changes would need a new Tier 3 review |
+   37: | Abuse: unauthenticated upload volume | **Exists**: any visitor can create submissions with media | Per-IP and per-hour limits need infrastructure (edge or WAF); the app has none. **Documented as an open risk; not solved by this design** |
+   38: | Storage visibility | Unknown from repo | Bucket must be private (no public read). Admin reads through short-lived signed URLs generated server-side. **Verify the bucket setting in the Supabase dashboard before launch** |
+   39: 
+   40: ## 3. Recommended design
+   41: 
+   42: Upload happens **inside the creation request**, not as a separate client-callable step. This adds no new public write path.
+   43: 
+   44: Order inside `submitMemoryAction`:
+   45: 
+   46: 1. Parse the form and read the files.
+   47: 2. **Validate everything first, with no database writes:** count, per-file size, total size, magic bytes, and EXIF GPS presence (or re-encoding, if approved). Reject with the generic public error.
+   48: 3. Normalize the submission record once, generate the SID, generate the capability token, and insert the capability row (Â§ capability design).
+   49: 4. Insert the submission and person rows (service role).
+   50: 5. Set the capability cookie.
+   51: 6. For each file: write the object under `submissions/<sid>/<uuid>.<ext>` using the verified type's extension, with upsert disabled.
+   52: 7. Insert all `media` rows in one service-role insert, keyed by the same SID.
+   53: 8. On success, redirect to `/remember/final`.
+   54: 9. On any failure at steps 3â€“7, compensate: delete uploaded objects, delete media rows, delete the capability row, delete the person and submission rows (best effort), clear the cookie, and redirect to `/remember/details?error=media` with the generic message. If a compensation step fails, record an **accepted residual risk** and rely on the sweep (below).
+   55: 
+   56: Why not a separate media endpoint with the capability: it would add a second authenticated write surface, and it would need its own consume step. Keeping upload inside the creation request needs no new surface, and the existing creation path is already reviewed for binding.
+   57: 
+   58: Why not Option B (a shared capability for both preferences and media): one token would then authorize two different writes. A leaked token would reach more than preference fields. Keep them separate.
+   59: 
+   60: ## 4. Schema and privileges
+   61: 
+   62: - No new policy and no new grant. `media` remains admin-read only. Inserts use the service role.
+   63: - Bucket `submission-media`: must be **private**. No anon or authenticated policy on `storage.objects` for this bucket. Verify in the dashboard, and record the result in `docs/MUSEUM_CHECKPOINT.md`.
+   64: - The service-role key is referenced only in server-only helpers in `src/lib/supabase.ts`.
+   65: - Two new helpers only: `insertContributorMediaRows` (service role, fixed columns) and `deleteSubmissionObjects` (service role, prefix limited to `submissions/<verified sid>/`).
+   66: 
+   67: ## 5. Validation rules (server side)
+   68: 
+   69: - Count: at most 5 files. Total bytes: at most 20 MB. Per file: at most 8 MB.
+   70: - Type: detect from magic bytes. Accept JPEG, PNG, WebP. Ignore the client's `file.type` except as a mismatch check. Reject if they disagree.
+   71: - Dimensions: reject if width or height exceeds 8000 px, to limit decode cost.
+   72: - Metadata: strip or reject EXIF GPS tags. Stored `file_name`: at most 120 characters, control characters removed, used only for display in admin.
+   73: - Object key: `submissions/<sid>/<uuid>.<ext>`, where `ext` comes from the verified type.
+   74: 
+   75: ## 6. Open decisions (need the user's answer)
+   76: 
+   77: 1. **Metadata stripping.** Option A: add an image library (for example `sharp`) to re-encode uploads. This removes EXIF and any appended data, and it is the robust choice. It is a new dependency and needs your approval. Option B: no new dependency. Reject any JPEG with a GPS EXIF tag and ask the contributor to remove location data. Option B is weaker, because metadata can be missed.
+   78: 2. **Abuse limits.** Accept the open risk for the prototype, or put rate limits at the hosting edge before launch.
+   79: 3. **Sweep job.** A scheduled cleanup for orphan objects and capability rows needs a scheduler. Choose the platform.
+   80: 
+   81: ## 7. Tests (before merge)
+   82: 
+   83: - Magic-byte mismatch is rejected (for example, HTML named `.jpg` with `image/jpeg`).
+   84: - Oversize, too many files, and too many total bytes are rejected before any database write.
+   85: - EXIF GPS JPEG is rejected (Option B) or re-encoded without GPS (Option A).
+   86: - Object key contains only the server UUID and the verified extension; a file name with `../` produces a safe key.
+   87: - Upload is not done with upsert; a key collision fails.
+   88: - Compensation: a failure in media-row insert deletes uploaded objects and the submission, person, and capability rows.
+   89: - Cross-submission: a media row for submission A cannot be created with a key under submission B's prefix.
+   90: - Storage and RLS: `supabase/schema.sql` diff adds nothing to grants or policies.
+   91: 
+   92: ## 8. Relationship to the preference capability
+   93: 
+   94: Both designs keep the same boundary: the contributor gets no general write access, and the server validates each write against a single submission. They stay separate. A combined capability would widen what one token can do, so media upload gets no preference-capability token.
+### src/app/remember/actions.ts
+    1: "use server";
+    2: 
+    3: import { createSubmission, deleteSubmissionRecords, insertMediaRows, validateMediaUpload } from "@/lib/db";
+    4: import { uploadSupabaseMedia, getPersistenceMode } from "@/lib/supabase";
+    5: import {
+    6:   CONTRIBUTOR_ERROR_MESSAGE,
+    7:   cookieNameFor,
+    8:   cookieOptions,
+    9:   formatCookieValue,
+   10:   isCanonicalSubmissionId,
+   11:   issueCapability,
+   12:   logContributorEvent,
+   13:   redeemCapability,
+   14:   sanitizePreferences
+   15: } from "@/lib/contributorCapability";
+   16: import type { SubmissionInput } from "@/lib/types";
+   17: import { cookies } from "next/headers";
+   18: import { redirect } from "next/navigation";
+   19: 
+   20: export async function submitMemoryAction(formData: FormData) {
+   21:   const input: SubmissionInput = {
+   22:     submitterName: String(formData.get("submitterName") || "").trim() || "Anonymous",
+   23:     contact: String(formData.get("contact") || ""),
+   24:     encounterDate: String(formData.get("encounterDate") || ""),
+   25:     isApproximateDate: formData.get("isApproximateDate") === "on",
+   26:     locationName: String(formData.get("locationName") || ""),
+   27:     city: String(formData.get("city") || ""),
+   28:     region: String(formData.get("region") || ""),
+   29:     country: String(formData.get("country") || ""),
+   30:     eventName: String(formData.get("eventName") || ""),
+   31:     howMet: String(formData.get("howMet") || ""),
+   32:     memoryText: String(formData.get("memoryText") || ""),
+   33:     beforeText: String(formData.get("beforeText") || ""),
+   34:     afterText: String(formData.get("afterText") || ""),
+   35:     metAgain: String(formData.get("metAgain") || ""),
+   36:     peoplePresent: String(formData.get("peoplePresent") || ""),
+   37:     yerielWearing: String(formData.get("yerielWearing") || ""),
+   38:     submitterWearing: String(formData.get("submitterWearing") || ""),
+   39:     talkedAbout: String(formData.get("talkedAbout") || ""),
+   40:     exchanged: String(formData.get("exchanged") || ""),
+   41:     artifactInfo: String(formData.get("artifactInfo") || ""),
+   42:     forgottenPrompt: String(formData.get("forgottenPrompt") || ""),
+   43:     bookPagePrompt: String(formData.get("bookPagePrompt") || ""),
+   44:     additionalComments: String(formData.get("additionalComments") || ""),
+   45:     mediaLink: String(formData.get("mediaLink") || ""),
+   46:     mediaConsent: formData.get("mediaConsent") === "on"
+   47:   };
+   48: 
+   49:   if (!input.memoryText.trim()) {
+   50:     redirect("/remember/write?error=missing");
+   51:   }
+   52: 
+   53:   const { id: submissionId, personId } = await createSubmission(input);
+   54: 
+   55:   // Issue the contributor capability only after the submission has persisted. If issuance fails, remove what was
+   56:   // just created so no unusable submission is left behind. The cookie is set before any media work.
+   57:   let capabilityToken: string;
+   58:   try {
+   59:     capabilityToken = await issueCapability(submissionId, new Date());
+   60:   } catch {
+   61:     logContributorEvent("issue-failed");
+   62:     try {
+   63:       await deleteSubmissionRecords(submissionId, personId);
+   64:     } catch {
+   65:       logContributorEvent("compensation-failed");
+   66:     }
+   67:     redirect("/remember/details?error=save");
+   68:   }
+   69:   const jar = await cookies();
+   70:   jar.set(cookieNameFor(submissionId), formatCookieValue(submissionId, capabilityToken), cookieOptions());
+   71: 
+   72:   const mediaFiles = formData.getAll("media") as File[];
+   73:   if (mediaFiles.length > 0 && getPersistenceMode() === "supabase") {
+   74:     try {
+   75:       const validationInputs = await Promise.all(
+   76:         mediaFiles.map(async (file) => ({
+   77:           fileName: file.name,
+   78:           mimeType: file.type,
+   79:           sizeBytes: file.size
+   80:         }))
+   81:       );
+   82: 
+   83:       validateMediaUpload(validationInputs);
+   84: 
+   85:       const uploadedMedia = await Promise.all(
+   86:         mediaFiles.map(async (file) => {
+   87:           const buffer = await file.arrayBuffer();
+   88:           const storagePath = await uploadSupabaseMedia(
+   89:             submissionId,
+   90:             file.name,
+   91:             new Uint8Array(buffer),
+   92:             file.type
+   93:           );
+   94: 
+   95:           return {
+   96:             fileName: file.name,
+   97:             mimeType: file.type,
+   98:             sizeBytes: file.size,
+   99:             storagePath
+  100:           };
+  101:         })
+  102:       );
+  103: 
+  104:       await insertMediaRows(submissionId, uploadedMedia);
+  105:     } catch (error: any) {
+  106:       console.error("Media upload error:", error);
+  107:       redirect(`/remember/details?error=media`);
+  108:     }
+  109:   }
+  110: 
+  111:   redirect(`/remember/final?submissionId=${submissionId}`);
+  112: }
+  113: 
+  114: export async function updatePreferencesAction(submissionId: string, formData: any) {
+  115:   // The submission id argument is untrusted. It only selects which cookie to read, and the redeem step
+  116:   // requires the cookie's own id to match it. Every database predicate uses the cookie's id.
+  117:   const jar = await cookies();
+  118:   const name = isCanonicalSubmissionId(submissionId) ? cookieNameFor(submissionId) : null;
+  119:   const value = name ? jar.get(name)?.value : undefined;
+  120: 
+  121:   let saved = false;
+  122:   try {
+  123:     saved = await redeemCapability(submissionId, value, sanitizePreferences(formData ?? {}), new Date());
+  124:   } catch {
+  125:     logContributorEvent("backend-error");
+  126:     saved = false;
+  127:   }
+  128: 
+  129:   // The capability is spent whether or not the save succeeded. Clear the cookie in every case.
+  130:   if (name) jar.set(name, "", cookieOptions(0));
+  131: 
+  132:   if (!saved) {
+  133:     throw new Error(CONTRIBUTOR_ERROR_MESSAGE);
+  134:   }
+  135: 
+  136:   // redirect() throws; it must sit outside the try block or the catch turns it into an error.
+  137:   redirect("/thanks");
+  138: }
+### src/lib/supabase.ts
+    1: import "server-only";
+    2: import { randomUUID } from "node:crypto";
+    3: import type { ReviewInput, SubmissionInput, SubmissionStatus } from "./types";
+    4: 
+    5: export type LoginResult = "ok" | "invalid" | "unauthorized" | "expired";
+    6: 
+    7: export type SupabaseAdminSession = {
+    8:   accessToken: string;
+    9:   userId: string;
+   10:   email: string;
+   11: };
+   12: 
+   13: type FetchLike = typeof fetch;
+   14: 
+   15: type SupabaseConfig = {
+   16:   url: string;
+   17:   anonKey: string;
+   18:   serviceRoleKey: string;
+   19: };
+   20: 
+   21: export type NormalizedSubmission = {
+   22:   id: string;
+   23:   personId: string;
+   24:   original: SubmissionInput;
+   25:   memoryPreview: string;
+   26:   encounterDate: string | null;
+   27:   isApproximateDate: boolean;
+   28:   locationName: string | null;
+   29:   city: string | null;
+   30:   region: string | null;
+   31:   country: string | null;
+   32:   eventName: string | null;
+   33:   createdAt: string;
+   34: };
+   35: 
+   36: export type NormalizedReview = {
+   37:   status: SubmissionStatus;
+   38:   notes: string | null;
+   39:   remembered: string | null;
+   40:   corrections: string | null;
+   41:   context: string | null;
+   42:   people: string | null;
+   43:   tags: string | null;
+   44:   importance: number | null;
+   45:   emotional_significance: number | null;
+   46:   historical_significance: number | null;
+   47:   accuracy_confidence: number | null;
+   48:   book_potential: number | null;
+   49:   chapter_category: string | null;
+   50:   private_notes: string | null;
+   51:   updated_at: string;
+   52: };
+   53: 
+   54: export type NormalizedStoryDraft = {
+   55:   id: string;
+   56:   submissionId: string;
+   57:   label: string;
+   58:   draftText: string;
+   59:   createdAt: string;
+   60: };
+   61: 
+   62: export function hasSupabaseEnv() {
+   63:   return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY);
+   64: }
+   65: 
+   66: export function getPersistenceMode() {
+   67:   const explicit = process.env.M3_PERSISTENCE;
+   68:   if (explicit === "sqlite" || explicit === "supabase") return explicit;
+   69:   return hasSupabaseEnv() ? "supabase" : "sqlite";
+   70: }
+   71: 
+   72: export function getAdminAuthMode() {
+   73:   const explicit = process.env.M3_ADMIN_AUTH;
+   74:   if (explicit === "local" || explicit === "supabase") return explicit;
+   75:   return hasSupabaseEnv() ? "supabase" : "local";
+   76: }
+   77: 
+   78: export function requireCompatibleAuthMode() {
+   79:   if (getPersistenceMode() === "supabase" && getAdminAuthMode() !== "supabase") {
+   80:     throw new Error("SUPABASE_MISCONFIGURED");
+   81:   }
+   82: }
+   83: 
+   84: export function getSupabaseConfig(requireServiceRole = true): SupabaseConfig {
+   85:   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "") || "";
+   86:   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+   87:   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+   88: 
+   89:   if (!url || !anonKey || (requireServiceRole && !serviceRoleKey)) {
+   90:     throw new Error("SUPABASE_MISCONFIGURED");
+   91:   }
+   92: 
+   93:   return { url, anonKey, serviceRoleKey };
+   94: }
+   95: 
+   96: function headers(apiKey: string, bearer = apiKey) {
+   97:   return {
+   98:     apikey: apiKey,
+   99:     authorization: `Bearer ${bearer}`,
+  100:     "content-type": "application/json"
+  101:   };
+  102: }
+  103: 
+  104: async function readJson(res: Response) {
+  105:   const text = await res.text();
+  106:   return text ? JSON.parse(text) : null;
+  107: }
+  108: 
+  109: async function request(path: string, init: RequestInit, fetchImpl: FetchLike = fetch) {
+  110:   const res = await fetchImpl(path, init);
+  111:   if (!res.ok) {
+  112:     const error = new Error(res.status === 401 ? "UNAUTHENTICATED" : `SUPABASE_REQUEST_FAILED:${res.status}`);
+  113:     (error as Error & { status?: number }).status = res.status;
+  114:     throw error;
+  115:   }
+  116:   return readJson(res);
+  117: }
+  118: 
+  119: export async function supabasePasswordLogin(email: string, password: string, fetchImpl: FetchLike = fetch) {
+  120:   const config = getSupabaseConfig(false);
+  121:   const data = await request(`${config.url}/auth/v1/token?grant_type=password`, {
+  122:     method: "POST",
+  123:     headers: headers(config.anonKey),
+  124:     body: JSON.stringify({ email, password })
+  125:   }, fetchImpl).catch((error) => {
+  126:     if ((error as Error & { status?: number }).status === 400 || (error as Error & { status?: number }).status === 401) return null;
+  127:     throw error;
+  128:   }) as any;
+  129: 
+  130:   if (!data?.access_token || !data?.user?.id) return null;
+  131:   return {
+  132:     accessToken: String(data.access_token),
+  133:     userId: String(data.user.id),
+  134:     email: String(data.user.email || email)
+  135:   };
+  136: }
+  137: 
+  138: export async function getSupabaseUser(accessToken: string, fetchImpl: FetchLike = fetch) {
+  139:   const config = getSupabaseConfig(false);
+  140:   const data = await request(`${config.url}/auth/v1/user`, {
+  141:     method: "GET",
+  142:     headers: headers(config.anonKey, accessToken)
+  143:   }, fetchImpl).catch(() => null) as any;
+  144: 
+  145:   if (!data?.id) return null;
+  146:   return { userId: String(data.id), email: String(data.email || "") };
+  147: }
+  148: 
+  149: export async function isSupabaseAdmin(accessToken: string, fetchImpl: FetchLike = fetch) {
+  150:   const config = getSupabaseConfig(false);
+  151:   const rows = await request(`${config.url}/rest/v1/m3_admins?select=id&limit=1`, {
+  152:     method: "GET",
+  153:     headers: headers(config.anonKey, accessToken)
+  154:   }, fetchImpl).catch(() => []) as any[];
+  155:   return Array.isArray(rows) && rows.length > 0;
+  156: }
+  157: 
+  158: export async function verifySupabaseAdminToken(accessToken: string, fetchImpl: FetchLike = fetch) {
+  159:   const user = await getSupabaseUser(accessToken, fetchImpl);
+  160:   if (!user) return null;
+  161:   if (!(await isSupabaseAdmin(accessToken, fetchImpl))) return null;
+  162:   return { accessToken, ...user } satisfies SupabaseAdminSession;
+  163: }
+  164: 
+  165: export async function createSupabaseSubmission(record: NormalizedSubmission, fetchImpl: FetchLike = fetch) {
+  166:   const config = getSupabaseConfig(true);
+  167:   await request(`${config.url}/rest/v1/persons`, {
+  168:     method: "POST",
+  169:     headers: { ...headers(config.serviceRoleKey), prefer: "return=minimal" },
+  170:     body: JSON.stringify({
+  171:       id: record.personId,
+  172:       display_name: record.original.submitterName,
+  173:       contact: record.original.contact || null,
+  174:       created_at: record.createdAt
+  175:     })
+  176:   }, fetchImpl);
+  177: 
+  178:   await request(`${config.url}/rest/v1/submissions`, {
+  179:     method: "POST",
+  180:     headers: { ...headers(config.serviceRoleKey), prefer: "return=minimal" },
+  181:     body: JSON.stringify({
+  182:       id: record.id,
+  183:       submitter_person_id: record.personId,
+  184:       original_json: record.original,
+  185:       memory_preview: record.memoryPreview,
+  186:       encounter_date: record.encounterDate,
+  187:       is_approximate_date: record.isApproximateDate,
+  188:       location_name: record.locationName,
+  189:       city: record.city,
+  190:       region: record.region,
+  191:       country: record.country,
+  192:       event_name: record.eventName,
+  193:       media_link: record.original.mediaLink || null,
+  194:       media_consent: record.original.mediaConsent || false,
+  195:       status: "UNREVIEWED",
+  196:       created_at: record.createdAt,
+  197:       updated_at: record.createdAt
+  198:     })
+  199:   }, fetchImpl);
+  200: 
+  201:   return record.id;
+  202: }
+  203: 
+  204: export async function listSupabaseSubmissions(adminToken: string, fetchImpl: FetchLike = fetch) {
+  205:   const config = getSupabaseConfig(false);
+  206:   return request(`${config.url}/rest/v1/submissions?select=id,status,memory_preview,encounter_date,location_name,city,region,country,event_name,created_at,persons(display_name)&order=created_at.desc`, {
+  207:     method: "GET",
+  208:     headers: headers(config.anonKey, adminToken)
+  209:   }, fetchImpl) as Promise<any[]>;
+  210: }
+  211: 
+  212: export async function getSupabaseSubmission(id: string, adminToken: string, fetchImpl: FetchLike = fetch) {
+  213:   const config = getSupabaseConfig(false);
+  214:   const rows = await request(`${config.url}/rest/v1/submissions?select=*,persons(display_name,contact),reviews(*)&id=eq.${encodeURIComponent(id)}&limit=1`, {
+  215:     method: "GET",
+  216:     headers: headers(config.anonKey, adminToken)
+  217:   }, fetchImpl) as any[];
+  218:   return rows[0] || null;
+  219: }
+  220: 
+  221: export async function upsertSupabaseReview(submissionId: string, review: NormalizedReview, adminToken?: string | null, fetchImpl: FetchLike = fetch) {
+  222:   if (!adminToken) throw new Error("UNAUTHENTICATED");
+  223:   const config = getSupabaseConfig(false);
+  224:   const existing = await request(`${config.url}/rest/v1/reviews?select=id&submission_id=eq.${encodeURIComponent(submissionId)}&limit=1`, {
+  225:     method: "GET",
+  226:     headers: headers(config.anonKey, adminToken)
+  227:   }, fetchImpl) as any[];
+  228: 
+  229:   const reviewPayload = {
+  230:     notes: review.notes,
+  231:     remembered: review.remembered,
+  232:     corrections: review.corrections,
+  233:     context: review.context,
+  234:     people: review.people,
+  235:     tags: review.tags,
+  236:     importance: review.importance,
+  237:     emotional_significance: review.emotional_significance,
+  238:     historical_significance: review.historical_significance,
+  239:     accuracy_confidence: review.accuracy_confidence,
+  240:     book_potential: review.book_potential,
+  241:     chapter_category: review.chapter_category,
+  242:     private_notes: review.private_notes,
+  243:     updated_at: review.updated_at
+  244:   };
+  245: 
+  246:   if (existing[0]?.id) {
+  247:     await request(`${config.url}/rest/v1/reviews?submission_id=eq.${encodeURIComponent(submissionId)}`, {
+  248:       method: "PATCH",
+  249:       headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
+  250:       body: JSON.stringify(reviewPayload)
+  251:     }, fetchImpl);
+  252:   } else {
+  253:     await request(`${config.url}/rest/v1/reviews`, {
+  254:       method: "POST",
+  255:       headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
+  256:       body: JSON.stringify({ submission_id: submissionId, ...reviewPayload })
+  257:     }, fetchImpl);
+  258:   }
+  259: 
+  260:   await request(`${config.url}/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, {
+  261:     method: "PATCH",
+  262:     headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
+  263:     body: JSON.stringify({ status: review.status, updated_at: review.updated_at })
+  264:   }, fetchImpl);
+  265: }
+  266: 
+  267: export async function createSupabaseStoryDraft(submissionId: string, label: string, draftText: string, draftId: string, createdAt: string, adminToken: string, fetchImpl: FetchLike = fetch) {
+  268:   const config = getSupabaseConfig(false);
+  269:   await request(`${config.url}/rest/v1/story_drafts`, {
+  270:     method: "POST",
+  271:     headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
+  272:     body: JSON.stringify({
+  273:       id: draftId,
+  274:       submission_id: submissionId,
+  275:       label,
+  276:       draft_text: draftText,
+  277:       created_at: createdAt
+  278:     })
+  279:   }, fetchImpl);
+  280:   return draftId;
+  281: }
+  282: 
+  283: export async function getSupabaseStoryDrafts(submissionId: string, adminToken: string, fetchImpl: FetchLike = fetch) {
+  284:   const config = getSupabaseConfig(false);
+  285:   return request(`${config.url}/rest/v1/story_drafts?submission_id=eq.${encodeURIComponent(submissionId)}&order=created_at.desc`, {
+  286:     method: "GET",
+  287:     headers: headers(config.anonKey, adminToken)
+  288:   }, fetchImpl) as Promise<any[]>;
+  289: }
+  290: 
+  291: export async function updateSupabaseStoryDraft(draftId: string, label: string, draftText: string, adminToken: string, fetchImpl: FetchLike = fetch) {
+  292:   const config = getSupabaseConfig(false);
+  293:   await request(`${config.url}/rest/v1/story_drafts?id=eq.${encodeURIComponent(draftId)}`, {
+  294:     method: "PATCH",
+  295:     headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
+  296:     body: JSON.stringify({ label, draft_text: draftText })
+  297:   }, fetchImpl);
+  298: }
+  299: 
+  300: export async function uploadSupabaseMedia(submissionId: string, fileName: string, fileBuffer: Uint8Array | Buffer, contentType: string, fetchImpl: FetchLike = fetch) {
+  301:   const config = getSupabaseConfig(true);
+  302:   const storagePath = `submissions/${submissionId}/${randomUUID()}-${sanitizeFileName(fileName)}`;
+  303: 
+  304:   const body = Buffer.isBuffer(fileBuffer) ? new Uint8Array(fileBuffer) : fileBuffer;
+  305: 
+  306:   await request(`${config.url}/storage/v1/object/submission-media/${encodeURIComponent(storagePath)}`, {
+  307:     method: "POST",
+  308:     headers: { authorization: `Bearer ${config.serviceRoleKey}` },
+  309:     body: body as BodyInit
+  310:   }, fetchImpl);
+  311: 
+  312:   return storagePath;
+  313: }
+  314: 
+  315: export async function insertSupabaseMediaRows(submissionId: string, files: Array<{ fileName: string; mimeType: string; sizeBytes: number; storagePath: string }>, adminToken: string, fetchImpl: FetchLike = fetch) {
+  316:   const config = getSupabaseConfig(false);
+  317:   const createdAt = new Date().toISOString();
+  318: 
+  319:   const mediaRows = files.map(f => ({
+  320:     id: randomUUID(),
+  321:     submission_id: submissionId,
+  322:     file_name: f.fileName,
+  323:     mime_type: f.mimeType,
+  324:     storage_path: f.storagePath,
+  325:     size_bytes: f.sizeBytes,
+  326:     created_at: createdAt
+  327:   }));
+  328: 
+  329:   await request(`${config.url}/rest/v1/media`, {
+  330:     method: "POST",
+  331:     headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
+  332:     body: JSON.stringify(mediaRows)
+  333:   }, fetchImpl);
+  334: }
+  335: 
+  336: export async function getSupabaseSubmissionMedia(submissionId: string, adminToken: string, fetchImpl: FetchLike = fetch) {
+  337:   const config = getSupabaseConfig(false);
+  338:   return request(`${config.url}/rest/v1/media?submission_id=eq.${encodeURIComponent(submissionId)}&order=created_at.asc`, {
+  339:     method: "GET",
+  340:     headers: headers(config.anonKey, adminToken)
+  341:   }, fetchImpl) as Promise<any[]>;
+  342: }
+  343: 
+  344: function sanitizeFileName(name: string): string {
+  345:   return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 200);
+  346: }
+  347: 
+  348: export async function updateSupabaseSubmissionPreferences(submissionId: string, preferences: { attributionPreference?: string; preferredAttribution?: string; bookNote?: string; finalNotes?: string }, adminToken: string, fetchImpl: FetchLike = fetch) {
+  349:   const config = getSupabaseConfig(false);
+  350:   const updatedAt = new Date().toISOString();
+  351: 
+  352:   const payload = {
+  353:     attribution_preference: preferences.attributionPreference || "anonymous",
+  354:     preferred_attribution: preferences.preferredAttribution || null,
+  355:     book_note: preferences.bookNote || null,
+  356:     final_notes: preferences.finalNotes || null,
+  357:     updated_at: updatedAt
+  358:   };
+  359: 
+  360:   await request(`${config.url}/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, {
+  361:     method: "PATCH",
+  362:     headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
+  363:     body: JSON.stringify(payload)
+  364:   }, fetchImpl);
+  365: }
+  366: 
+  367: // ---- Contributor capability store. Narrow, service-role only. See docs/MUSEUM_CONTRIBUTOR_CAPABILITY_DESIGN.md. ----
+  368: // These four functions are the only service-role writes for contributor capabilities. They never accept a bearer
+  369: // or admin token, and every filter is built from values the caller verified. Row counts are checked, so a
+  370: // zero-row or wrong-row response is a failure, not a success.
+  371: 
+  372: export async function insertSupabaseCapability(submissionId: string, tokenHash: string, expiresAt: string, fetchImpl: FetchLike = fetch) {
+  373:   const config = getSupabaseConfig(true);
+  374:   await request(`${config.url}/rest/v1/contributor_capabilities`, {
+  375:     method: "POST",
+  376:     headers: { ...headers(config.serviceRoleKey), prefer: "return=minimal" },
+  377:     body: JSON.stringify({ submission_id: submissionId, token_hash: tokenHash, expires_at: expiresAt })
+  378:   }, fetchImpl);
+  379: }
+  380: 
+  381: /** Consume-first: the DELETE is the single-use gate. Returns true only when exactly the expected row was removed. */
+  382: export async function consumeSupabaseCapability(submissionId: string, tokenHash: string, nowIso: string, fetchImpl: FetchLike = fetch) {
+  383:   const config = getSupabaseConfig(true);
+  384:   const url = `${config.url}/rest/v1/contributor_capabilities?submission_id=eq.${encodeURIComponent(submissionId)}`
+  385:     + `&token_hash=eq.${encodeURIComponent(tokenHash)}&expires_at=gt.${encodeURIComponent(nowIso)}&select=submission_id`;
+  386:   const rows = await request(url, {
+  387:     method: "DELETE",
+  388:     headers: { ...headers(config.serviceRoleKey), prefer: "return=representation" }
+  389:   }, fetchImpl);
+  390:   return Array.isArray(rows) && rows.length === 1 && rows[0]?.submission_id === submissionId;
+  391: }
+  392: 
+  393: /** Save the four contributor-owned fields. Guarded by status: only an UNREVIEWED row can change. */
+  394: export async function saveSupabaseContributorPreferences(submissionId: string, fields: { attributionPreference: string; preferredAttribution: string | null; bookNote: string | null; finalNotes: string | null }, fetchImpl: FetchLike = fetch) {
+  395:   const config = getSupabaseConfig(true);
+  396:   const url = `${config.url}/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}&status=eq.UNREVIEWED&select=id`;
+  397:   const rows = await request(url, {
+  398:     method: "PATCH",
+  399:     headers: { ...headers(config.serviceRoleKey), prefer: "return=representation" },
+  400:     body: JSON.stringify({
+  401:       attribution_preference: fields.attributionPreference,
+  402:       preferred_attribution: fields.preferredAttribution,
+  403:       book_note: fields.bookNote,
+  404:       final_notes: fields.finalNotes
+  405:     })
+  406:   }, fetchImpl);
+  407:   return Array.isArray(rows) && rows.length === 1 && rows[0]?.id === submissionId;
+  408: }
+  409: 
+  410: /** Compensation for a failed creation: capability, submission, then person. Each delete is keyed by a verified id. */
+  411: export async function deleteSupabaseSubmissionRecords(submissionId: string, personId: string, fetchImpl: FetchLike = fetch) {
+  412:   const config = getSupabaseConfig(true);
+  413:   const auth = { ...headers(config.serviceRoleKey), prefer: "return=minimal" };
+  414:   await request(`${config.url}/rest/v1/contributor_capabilities?submission_id=eq.${encodeURIComponent(submissionId)}`, { method: "DELETE", headers: auth }, fetchImpl);
+  415:   await request(`${config.url}/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, { method: "DELETE", headers: auth }, fetchImpl);
+  416:   await request(`${config.url}/rest/v1/persons?id=eq.${encodeURIComponent(personId)}`, { method: "DELETE", headers: auth }, fetchImpl);
+  417: }
+### src/lib/db.ts
+    1: import "server-only";
+    2: import { mkdirSync } from "node:fs";
+    3: import { dirname, resolve } from "node:path";
+    4: import { randomUUID } from "node:crypto";
+    5: import { DatabaseSync } from "node:sqlite";
+    6: import { submissionStatuses, type ReviewInput, type SubmissionInput, type SubmissionStatus } from "./types";
+    7: import {
+    8:   createSupabaseSubmission,
+    9:   getPersistenceMode,
+   10:   getSupabaseSubmission,
+   11:   listSupabaseSubmissions,
+   12:   upsertSupabaseReview,
+   13:   createSupabaseStoryDraft,
+   14:   getSupabaseStoryDrafts,
+   15:   updateSupabaseStoryDraft,
+   16:   uploadSupabaseMedia,
+   17:   insertSupabaseMediaRows,
+   18:   getSupabaseSubmissionMedia,
+   19:   updateSupabaseSubmissionPreferences,
+   20:   consumeSupabaseCapability,
+   21:   deleteSupabaseSubmissionRecords,
+   22:   insertSupabaseCapability,
+   23:   saveSupabaseContributorPreferences,
+   24:   type NormalizedReview,
+   25:   type NormalizedSubmission
+   26: } from "./supabase";
+   27: 
+   28: let db: DatabaseSync | null = null;
+   29: 
+   30: function getDb() {
+   31:   if (db) return db;
+   32: 
+   33:   const databasePath = resolve(/* turbopackIgnore: true */ process.env.DATABASE_PATH || ".m3-memory/m3-memory.sqlite");
+   34:   mkdirSync(dirname(databasePath), { recursive: true });
+   35: 
+   36:   db = new DatabaseSync(databasePath);
+   37:   db.exec("PRAGMA foreign_keys = ON");
+   38:   db.exec(`
+   39:     CREATE TABLE IF NOT EXISTS persons (
+   40:       id TEXT PRIMARY KEY,
+   41:       display_name TEXT NOT NULL,
+   42:       contact TEXT,
+   43:       created_at TEXT NOT NULL
+   44:     );
+   45: 
+   46:     CREATE TABLE IF NOT EXISTS submissions (
+   47:       id TEXT PRIMARY KEY,
+   48:       submitter_person_id TEXT,
+   49:       original_json TEXT NOT NULL,
+   50:       memory_preview TEXT NOT NULL,
+   51:       encounter_date TEXT,
+   52:       is_approximate_date INTEGER NOT NULL DEFAULT 0,
+   53:       location_name TEXT,
+   54:       city TEXT,
+   55:       region TEXT,
+   56:       country TEXT,
+   57:       event_name TEXT,
+   58:       media_link TEXT,
+   59:       media_consent INTEGER NOT NULL DEFAULT 0,
+   60:       status TEXT NOT NULL DEFAULT 'UNREVIEWED',
+   61:       created_at TEXT NOT NULL,
+   62:       updated_at TEXT NOT NULL,
+   63:       FOREIGN KEY (submitter_person_id) REFERENCES persons(id)
+   64:     );
+   65: 
+   66:     CREATE TABLE IF NOT EXISTS reviews (
+   67:       id TEXT PRIMARY KEY,
+   68:       submission_id TEXT NOT NULL UNIQUE,
+   69:       notes TEXT,
+   70:       remembered TEXT,
+   71:       corrections TEXT,
+   72:       context TEXT,
+   73:       people TEXT,
+   74:       tags TEXT,
+   75:       importance INTEGER,
+   76:       emotional_significance INTEGER,
+   77:       historical_significance INTEGER,
+   78:       accuracy_confidence INTEGER,
+   79:       book_potential INTEGER,
+   80:       chapter_category TEXT,
+   81:       private_notes TEXT,
+   82:       created_at TEXT NOT NULL,
+   83:       updated_at TEXT NOT NULL,
+   84:       FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+   85:     );
+   86: 
+   87:     CREATE TABLE IF NOT EXISTS media (
+   88:       id TEXT PRIMARY KEY,
+   89:       submission_id TEXT NOT NULL,
+   90:       file_name TEXT NOT NULL,
+   91:       mime_type TEXT NOT NULL,
+   92:       storage_path TEXT NOT NULL,
+   93:       size_bytes INTEGER NOT NULL,
+   94:       created_at TEXT NOT NULL,
+   95:       FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+   96:     );
+   97: 
+   98:     CREATE TABLE IF NOT EXISTS artifacts (
+   99:       id TEXT PRIMARY KEY,
+  100:       submission_id TEXT NOT NULL,
+  101:       label TEXT NOT NULL,
+  102:       notes TEXT,
+  103:       created_at TEXT NOT NULL,
+  104:       FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+  105:     );
+  106: 
+  107:     CREATE TABLE IF NOT EXISTS story_drafts (
+  108:       id TEXT PRIMARY KEY,
+  109:       submission_id TEXT NOT NULL,
+  110:       label TEXT NOT NULL DEFAULT 'AI-GENERATED DRAFT',
+  111:       draft_text TEXT NOT NULL,
+  112:       approved_at TEXT,
+  113:       created_at TEXT NOT NULL,
+  114:       FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+  115:     );
+  116:   `);
+  117: 
+  118:   // Contributor capabilities: one row per submission with an open contributor window. No raw token is stored.
+  119:   db.exec(`
+  120:     CREATE TABLE IF NOT EXISTS contributor_capabilities (
+  121:       submission_id TEXT PRIMARY KEY,
+  122:       token_hash TEXT NOT NULL,
+  123:       expires_at TEXT NOT NULL,
+  124:       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+  125:     );
+  126:   `);
+  127: 
+  128:   // Ensure media columns exist (additive, safe to run multiple times)
+  129:   try {
+  130:     db.exec("ALTER TABLE submissions ADD COLUMN media_link TEXT");
+  131:   } catch {
+  132:     // Column already exists, safe to ignore
+  133:   }
+  134:   try {
+  135:     db.exec("ALTER TABLE submissions ADD COLUMN media_consent INTEGER NOT NULL DEFAULT 0");
+  136:   } catch {
+  137:     // Column already exists, safe to ignore
+  138:   }
+  139:   // Ensure Act III preference columns exist (additive, safe to run multiple times)
+  140:   try {
+  141:     db.exec("ALTER TABLE submissions ADD COLUMN attribution_preference TEXT DEFAULT 'anonymous'");
+  142:   } catch {
+  143:     // Column already exists, safe to ignore
+  144:   }
+  145:   try {
+  146:     db.exec("ALTER TABLE submissions ADD COLUMN preferred_attribution TEXT");
+  147:   } catch {
+  148:     // Column already exists, safe to ignore
+  149:   }
+  150:   try {
+  151:     db.exec("ALTER TABLE submissions ADD COLUMN book_note TEXT");
+  152:   } catch {
+  153:     // Column already exists, safe to ignore
+  154:   }
+  155:   try {
+  156:     db.exec("ALTER TABLE submissions ADD COLUMN final_notes TEXT");
+  157:   } catch {
+  158:     // Column already exists, safe to ignore
+  159:   }
+  160: 
+  161:   return db;
+  162: }
+  163: 
+  164: function now() {
+  165:   return new Date().toISOString();
+  166: }
+  167: 
+  168: function text(value: string | undefined, max = 4000) {
+  169:   return (value || "").trim().slice(0, max);
+  170: }
+  171: 
+  172: function optionalText(value: string | undefined, max = 4000): string | undefined {
+  173:   const cleaned = text(value, max);
+  174:   return cleaned || undefined;
+  175: }
+  176: 
+  177: function rating(value: number | undefined): number | null {
+  178:   const n = value ?? 0;
+  179:   return Number.isInteger(n) && n >= 1 && n <= 5 ? n : null;
+  180: }
+  181: 
+  182: function requireStatus(status: SubmissionStatus) {
+  183:   if (!submissionStatuses.includes(status)) {
+  184:     throw new Error("INVALID_STATUS");
+  185:   }
+  186: }
+  187: 
+  188: function normalizeSubmission(input: SubmissionInput): NormalizedSubmission {
+  189:   const createdAt = now();
+  190:   const submitterName = text(input.submitterName, 160);
+  191:   const memoryText = text(input.memoryText, 12000);
+  192: 
+  193:   if (!submitterName || !memoryText) {
+  194:     throw new Error("INVALID_SUBMISSION");
+  195:   }
+  196: 
+  197:   const original: SubmissionInput = {
+  198:     submitterName,
+  199:     contact: text(input.contact, 240),
+  200:     encounterDate: text(input.encounterDate, 40),
+  201:     isApproximateDate: Boolean(input.isApproximateDate),
+  202:     locationName: text(input.locationName, 240),
+  203:     city: text(input.city, 120),
+  204:     region: text(input.region, 120),
+  205:     country: text(input.country, 120),
+  206:     eventName: text(input.eventName, 240),
+  207:     howMet: text(input.howMet, 4000),
+  208:     memoryText,
+  209:     beforeText: text(input.beforeText, 4000),
+  210:     afterText: text(input.afterText, 4000),
+  211:     metAgain: text(input.metAgain, 4000),
+  212:     peoplePresent: text(input.peoplePresent, 4000),
+  213:     yerielWearing: text(input.yerielWearing, 2000),
+  214:     submitterWearing: text(input.submitterWearing, 2000),
+  215:     talkedAbout: text(input.talkedAbout, 4000),
+  216:     exchanged: text(input.exchanged, 2000),
+  217:     artifactInfo: text(input.artifactInfo, 4000),
+  218:     forgottenPrompt: text(input.forgottenPrompt, 4000),
+  219:     bookPagePrompt: text(input.bookPagePrompt, 4000),
+  220:     additionalComments: text(input.additionalComments, 4000),
+  221:     mediaLink: text(input.mediaLink, 500),
+  222:     mediaConsent: Boolean(input.mediaConsent),
+  223:     attributionPreference: input.attributionPreference || "anonymous",
+  224:     preferredAttribution: text(input.preferredAttribution, 240) || undefined,
+  225:     bookNote: text(input.bookNote, 4000) || undefined,
+  226:     finalNotes: text(input.finalNotes, 4000) || undefined
+  227:   };
+  228: 
+  229:   return {
+  230:     id: randomUUID(),
+  231:     personId: randomUUID(),
+  232:     original,
+  233:     memoryPreview: memoryText.slice(0, 220),
+  234:     encounterDate: optionalText(original.encounterDate, 40) ?? null,
+  235:     isApproximateDate: original.isApproximateDate || false,
+  236:     locationName: optionalText(original.locationName, 240) ?? null,
+  237:     city: optionalText(original.city, 120) ?? null,
+  238:     region: optionalText(original.region, 120) ?? null,
+  239:     country: optionalText(original.country, 120) ?? null,
+  240:     eventName: optionalText(original.eventName, 240) ?? null,
+  241:     createdAt
+  242:   };
+  243: }
+  244: 
+  245: function normalizeReview(input: ReviewInput): NormalizedReview {
+  246:   requireStatus(input.status);
+  247:   return {
+  248:     status: input.status,
+  249:     notes: optionalText(input.notes) ?? null,
+  250:     remembered: optionalText(input.remembered) ?? null,
+  251:     corrections: optionalText(input.corrections) ?? null,
+  252:     context: optionalText(input.context) ?? null,
+  253:     people: optionalText(input.people, 1000) ?? null,
+  254:     tags: optionalText(input.tags, 1000) ?? null,
+  255:     importance: rating(input.importance),
+  256:     emotional_significance: rating(input.emotionalSignificance),
+  257:     historical_significance: rating(input.historicalSignificance),
+  258:     accuracy_confidence: rating(input.accuracyConfidence),
+  259:     book_potential: rating(input.bookPotential),
+  260:     chapter_category: optionalText(input.chapterCategory, 240) ?? null,
+  261:     private_notes: optionalText(input.privateNotes) ?? null,
+  262:     updated_at: now()
+  263:   };
+  264: }
+  265: 
+  266: function requireSupabaseAdminToken(adminToken?: string | null) {
+  267:   if (!adminToken) throw new Error("UNAUTHENTICATED");
+  268:   return adminToken;
+  269: }
+  270: 
+  271: export async function createSubmission(input: SubmissionInput) {
+  272:   const record = normalizeSubmission(input);
+  273: 
+  274:   if (getPersistenceMode() === "supabase") {
+  275:     const id = await createSupabaseSubmission(record);
+  276:     return { id, personId: record.personId };
+  277:   }
+  278: 
+  279:   const db = getDb();
+  280:   db.prepare("INSERT INTO persons (id, display_name, contact, created_at) VALUES (?, ?, ?, ?)").run(
+  281:     record.personId,
+  282:     record.original.submitterName,
+  283:     optionalText(record.original.contact, 240) ?? null,
+  284:     record.createdAt
+  285:   );
+  286: 
+  287:   db.prepare(`
+  288:     INSERT INTO submissions (
+  289:       id, submitter_person_id, original_json, memory_preview, encounter_date,
+  290:       is_approximate_date, location_name, city, region, country, event_name,
+  291:       media_link, media_consent,
+  292:       status, created_at, updated_at
+  293:     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'UNREVIEWED', ?, ?)
+  294:   `).run(
+  295:     record.id,
+  296:     record.personId,
+  297:     JSON.stringify(record.original),
+  298:     record.memoryPreview,
+  299:     record.encounterDate,
+  300:     record.isApproximateDate ? 1 : 0,
+  301:     record.locationName,
+  302:     record.city,
+  303:     record.region,
+  304:     record.country,
+  305:     record.eventName,
+  306:     record.original.mediaLink || null,
+  307:     record.original.mediaConsent ? 1 : 0,
+  308:     record.createdAt,
+  309:     record.createdAt
+  310:   );
+  311: 
+  312:   return { id: record.id, personId: record.personId };
+  313: }
+  314: 
+  315: function mapSupabaseListItem(item: any) {
+  316:   const person = Array.isArray(item.persons) ? item.persons[0] : item.persons;
+  317:   return {
+  318:     id: item.id,
+  319:     status: item.status,
+  320:     memoryPreview: item.memory_preview,
+  321:     encounterDate: item.encounter_date,
+  322:     locationName: item.location_name,
+  323:     city: item.city,
+  324:     region: item.region,
+  325:     country: item.country,
+  326:     eventName: item.event_name,
+  327:     createdAt: item.created_at,
+  328:     submitterName: person?.display_name || null
+  329:   };
+  330: }
+  331: 
+  332: export async function listSubmissions(adminToken?: string | null) {
+  333:   if (getPersistenceMode() === "supabase") {
+  334:     const rows = await listSupabaseSubmissions(requireSupabaseAdminToken(adminToken));
+  335:     return rows.map(mapSupabaseListItem);
+  336:   }
+  337: 
+  338:   const db = getDb();
+  339:   return db.prepare(`
+  340:     SELECT
+  341:       submissions.id,
+  342:       submissions.status,
+  343:       submissions.memory_preview AS memoryPreview,
+  344:       submissions.encounter_date AS encounterDate,
+  345:       submissions.location_name AS locationName,
+  346:       submissions.city,
+  347:       submissions.region,
+  348:       submissions.country,
+  349:       submissions.event_name AS eventName,
+  350:       submissions.created_at AS createdAt,
+  351:       persons.display_name AS submitterName
+  352:     FROM submissions
+  353:     LEFT JOIN persons ON persons.id = submissions.submitter_person_id
+  354:     ORDER BY submissions.created_at DESC
+  355:   `).all();
+  356: }
+  357: 
+  358: function mapSupabaseDetail(row: any) {
+  359:   const person = Array.isArray(row.persons) ? row.persons[0] : row.persons;
+  360:   const reviews = Array.isArray(row.reviews) ? row.reviews : row.reviews ? [row.reviews] : [];
+  361:   const { persons, reviews: _reviews, original_json, ...submission } = row;
+  362:   void persons;
+  363:   void _reviews;
+  364:   return {
+  365:     ...submission,
+  366:     original_json: typeof original_json === "string" ? original_json : JSON.stringify(original_json),
+  367:     submitterName: person?.display_name || null,
+  368:     contact: person?.contact || null,
+  369:     original: typeof original_json === "string" ? JSON.parse(original_json) : original_json,
+  370:     review: reviews[0] || null
+  371:   };
+  372: }
+  373: 
+  374: export async function getSubmission(id: string, adminToken?: string | null) {
+  375:   if (getPersistenceMode() === "supabase") {
+  376:     const row = await getSupabaseSubmission(id, requireSupabaseAdminToken(adminToken));
+  377:     return row ? mapSupabaseDetail(row) : null;
+  378:   }
+  379: 
+  380:   const db = getDb();
+  381:   const submission = db.prepare(`
+  382:     SELECT
+  383:       submissions.*,
+  384:       persons.display_name AS submitterName,
+  385:       persons.contact AS contact
+  386:     FROM submissions
+  387:     LEFT JOIN persons ON persons.id = submissions.submitter_person_id
+  388:     WHERE submissions.id = ?
+  389:   `).get(id) as any;
+  390: 
+  391:   if (!submission) return null;
+  392: 
+  393:   const review = db.prepare("SELECT * FROM reviews WHERE submission_id = ?").get(id) || null;
+  394:   return {
+  395:     ...submission,
+  396:     original: JSON.parse(submission.original_json),
+  397:     review
+  398:   };
+  399: }
+  400: 
+  401: export async function upsertReview(submissionId: string, input: ReviewInput, adminToken?: string | null) {
+  402:   const review = normalizeReview(input);
+  403: 
+  404:   if (getPersistenceMode() === "supabase") {
+  405:     await upsertSupabaseReview(submissionId, review, requireSupabaseAdminToken(adminToken));
+  406:     return;
+  407:   }
+  408: 
+  409:   const db = getDb();
+  410:   const existing = db.prepare("SELECT id FROM reviews WHERE submission_id = ?").get(submissionId) as any;
+  411:   const reviewId = existing?.id || randomUUID();
+  412: 
+  413:   if (existing) {
+  414:     db.prepare(`
+  415:       UPDATE reviews SET
+  416:         notes = ?, remembered = ?, corrections = ?, context = ?, people = ?, tags = ?,
+  417:         importance = ?, emotional_significance = ?, historical_significance = ?,
+  418:         accuracy_confidence = ?, book_potential = ?, chapter_category = ?, private_notes = ?,
+  419:         updated_at = ?
+  420:       WHERE submission_id = ?
+  421:     `).run(
+  422:       review.notes,
+  423:       review.remembered,
+  424:       review.corrections,
+  425:       review.context,
+  426:       review.people,
+  427:       review.tags,
+  428:       review.importance,
+  429:       review.emotional_significance,
+  430:       review.historical_significance,
+  431:       review.accuracy_confidence,
+  432:       review.book_potential,
+  433:       review.chapter_category,
+  434:       review.private_notes,
+  435:       review.updated_at,
+  436:       submissionId
+  437:     );
+  438:   } else {
+  439:     db.prepare(`
+  440:       INSERT INTO reviews (
+  441:         id, submission_id, notes, remembered, corrections, context, people, tags,
+  442:         importance, emotional_significance, historical_significance, accuracy_confidence,
+  443:         book_potential, chapter_category, private_notes, created_at, updated_at
+  444:       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  445:     `).run(
+  446:       reviewId,
+  447:       submissionId,
+  448:       review.notes,
+  449:       review.remembered,
+  450:       review.corrections,
+  451:       review.context,
+  452:       review.people,
+  453:       review.tags,
+  454:       review.importance,
+  455:       review.emotional_significance,
+  456:       review.historical_significance,
+  457:       review.accuracy_confidence,
+  458:       review.book_potential,
+  459:       review.chapter_category,
+  460:       review.private_notes,
+  461:       review.updated_at,
+  462:       review.updated_at
+  463:     );
+  464:   }
+  465: 
+  466:   db.prepare("UPDATE submissions SET status = ?, updated_at = ? WHERE id = ?").run(
+  467:     review.status,
+  468:     review.updated_at,
+  469:     submissionId
+  470:   );
+  471: }
+  472: 
+  473: export async function createStoryDraft(submissionId: string, label: string, draftText: string, adminToken?: string | null) {
+  474:   if (getPersistenceMode() === "supabase") {
+  475:     const token = requireSupabaseAdminToken(adminToken);
+  476:     const draftId = randomUUID();
+  477:     const createdAt = now();
+  478:     return createSupabaseStoryDraft(submissionId, label, draftText, draftId, createdAt, token);
+  479:   }
+  480: 
+  481:   const db = getDb();
+  482:   const draftId = randomUUID();
+  483:   const createdAt = now();
+  484: 
+  485:   db.prepare(`
+  486:     INSERT INTO story_drafts (
+  487:       id, submission_id, label, draft_text, created_at
+  488:     ) VALUES (?, ?, ?, ?, ?)
+  489:   `).run(
+  490:     draftId,
+  491:     submissionId,
+  492:     label,
+  493:     draftText,
+  494:     createdAt
+  495:   );
+  496: 
+  497:   return draftId;
+  498: }
+  499: 
+  500: export async function getStoryDrafts(submissionId: string, adminToken?: string | null) {
+  501:   if (getPersistenceMode() === "supabase") {
+  502:     const token = requireSupabaseAdminToken(adminToken);
+  503:     return getSupabaseStoryDrafts(submissionId, token);
+  504:   }
+  505: 
+  506:   const db = getDb();
+  507:   return (db.prepare("SELECT * FROM story_drafts WHERE submission_id = ? ORDER BY created_at DESC").all(submissionId) as any[]) || [];
+  508: }
+  509: 
+  510: export async function updateStoryDraft(draftId: string, label: string, draftText: string, adminToken?: string | null) {
+  511:   if (getPersistenceMode() === "supabase") {
+  512:     const token = requireSupabaseAdminToken(adminToken);
+  513:     await updateSupabaseStoryDraft(draftId, label, draftText, token);
+  514:     return;
+  515:   }
+  516: 
+  517:   const db = getDb();
+  518: 
+  519:   db.prepare(`
+  520:     UPDATE story_drafts SET label = ?, draft_text = ? WHERE id = ?
+  521:   `).run(
+  522:     label,
+  523:     draftText,
+  524:     draftId
+  525:   );
+  526: }
+  527: 
+  528: // Media upload validation and persistence
+  529: const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024; // 8 MB
+  530: const MAX_FILES_PER_SUBMISSION = 5;
+  531: const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+  532: 
+  533: export interface MediaUploadInput {
+  534:   fileName: string;
+  535:   mimeType: string;
+  536:   sizeBytes: number;
+  537: }
+  538: 
+  539: export function validateMediaUpload(files: MediaUploadInput[]) {
+  540:   if (files.length > MAX_FILES_PER_SUBMISSION) {
+  541:     throw new Error("TOO_MANY_FILES");
+  542:   }
+  543: 
+  544:   for (const file of files) {
+  545:     if (!file.mimeType || !ALLOWED_MIME_TYPES.has(file.mimeType)) {
+  546:       throw new Error("INVALID_MIME_TYPE");
+  547:     }
+  548:     if (file.sizeBytes > MAX_FILE_SIZE_BYTES) {
+  549:       throw new Error("FILE_TOO_LARGE");
+  550:     }
+  551:   }
+  552: }
+  553: 
+  554: export async function insertMediaRows(submissionId: string, files: Array<{ fileName: string; mimeType: string; sizeBytes: number; storagePath: string }>, adminToken?: string | null) {
+  555:   if (getPersistenceMode() === "supabase") {
+  556:     const token = requireSupabaseAdminToken(adminToken);
+  557:     return insertSupabaseMediaRows(submissionId, files, token);
+  558:   }
+  559: 
+  560:   const db = getDb();
+  561:   const createdAt = now();
+  562: 
+  563:   for (const file of files) {
+  564:     db.prepare(`
+  565:       INSERT INTO media (id, submission_id, file_name, mime_type, storage_path, size_bytes, created_at)
+  566:       VALUES (?, ?, ?, ?, ?, ?, ?)
+  567:     `).run(
+  568:       randomUUID(),
+  569:       submissionId,
+  570:       file.fileName,
+  571:       file.mimeType,
+  572:       file.storagePath,
+  573:       file.sizeBytes,
+  574:       createdAt
+  575:     );
+  576:   }
+  577: }
+  578: 
+  579: export async function getSubmissionMedia(submissionId: string, adminToken?: string | null) {
+  580:   if (getPersistenceMode() === "supabase") {
+  581:     const token = requireSupabaseAdminToken(adminToken);
+  582:     return getSupabaseSubmissionMedia(submissionId, token);
+  583:   }
+  584: 
+  585:   const db = getDb();
+  586:   return (db.prepare("SELECT id, file_name, mime_type, storage_path, size_bytes, created_at FROM media WHERE submission_id = ? ORDER BY created_at ASC").all(submissionId) as any[]) || [];
+  587: }
+  588: 
+  589: // Act III preference update (PATCH) â€” lightweight, does not touch original_json or media
+  590: export interface Act3UpdateInput {
+  591:   attributionPreference?: string;
+  592:   preferredAttribution?: string;
+  593:   bookNote?: string;
+  594:   finalNotes?: string;
+  595: }
+  596: 
+  597: export async function updateSubmissionPreferences(submissionId: string, input: Act3UpdateInput, adminToken?: string | null) {
+  598:   if (getPersistenceMode() === "supabase") {
+  599:     const token = requireSupabaseAdminToken(adminToken);
+  600:     await updateSupabaseSubmissionPreferences(submissionId, input, token);
+  601:     return;
+  602:   }
+  603: 
+  604:   const db = getDb();
+  605:   const updatedAt = now();
+  606: 
+  607:   db.prepare(`
+  608:     UPDATE submissions SET
+  609:       attribution_preference = ?,
+  610:       preferred_attribution = ?,
+  611:       book_note = ?,
+  612:       final_notes = ?,
+  613:       updated_at = ?
+  614:     WHERE id = ?
+  615:   `).run(
+  616:     input.attributionPreference || "anonymous",
+  617:     optionalText(input.preferredAttribution, 240) ?? null,
+  618:     optionalText(input.bookNote, 4000) ?? null,
+  619:     optionalText(input.finalNotes, 4000) ?? null,
+  620:     updatedAt,
+  621:     submissionId
+  622:   );
+  623: }
+  624: 
+  625: // ---- Contributor capability store (dispatches by persistence mode). Used only by src/lib/contributorCapability.ts. ----
+  626: 
+  627: export async function storeContributorCapability(submissionId: string, tokenHash: string, expiresAt: string) {
+  628:   if (getPersistenceMode() === "supabase") {
+  629:     await insertSupabaseCapability(submissionId, tokenHash, expiresAt);
+  630:     return;
+  631:   }
+  632:   getDb().prepare("INSERT INTO contributor_capabilities (submission_id, token_hash, expires_at) VALUES (?, ?, ?)").run(submissionId, tokenHash, expiresAt);
+  633: }
+  634: 
+  635: /** Atomic consume. True only if exactly one unexpired row matched and was deleted. */
+  636: export async function consumeContributorCapability(submissionId: string, tokenHash: string, nowIso: string) {
+  637:   if (getPersistenceMode() === "supabase") {
+  638:     return consumeSupabaseCapability(submissionId, tokenHash, nowIso);
+  639:   }
+  640:   const rows = getDb()
+  641:     .prepare("DELETE FROM contributor_capabilities WHERE submission_id = ? AND token_hash = ? AND expires_at > ? RETURNING submission_id")
+  642:     .all(submissionId, tokenHash, nowIso);
+  643:   return rows.length === 1 && (rows[0] as { submission_id: string }).submission_id === submissionId;
+  644: }
+  645: 
+  646: /** Guarded save of the four contributor-owned fields. True only if exactly the one UNREVIEWED row changed. */
+  647: export async function saveContributorPreferences(
+  648:   submissionId: string,
+  649:   fields: { attributionPreference: string; preferredAttribution: string | null; bookNote: string | null; finalNotes: string | null }
+  650: ) {
+  651:   if (getPersistenceMode() === "supabase") {
+  652:     return saveSupabaseContributorPreferences(submissionId, fields);
+  653:   }
+  654:   const result = getDb()
+  655:     .prepare(`UPDATE submissions SET attribution_preference = ?, preferred_attribution = ?, book_note = ?, final_notes = ?, updated_at = ?
+  656:               WHERE id = ? AND status = 'UNREVIEWED'`)
+  657:     .run(fields.attributionPreference, fields.preferredAttribution, fields.bookNote, fields.finalNotes, now(), submissionId);
+  658:   return Number(result.changes) === 1;
+  659: }
+  660: 
+  661: /** Compensation for a failed creation. Best effort; the caller logs a category, never the ids. */
+  662: export async function deleteSubmissionRecords(submissionId: string, personId: string) {
+  663:   if (getPersistenceMode() === "supabase") {
+  664:     await deleteSupabaseSubmissionRecords(submissionId, personId);
+  665:     return;
+  666:   }
+  667:   const db = getDb();
+  668:   db.prepare("DELETE FROM contributor_capabilities WHERE submission_id = ?").run(submissionId);
+  669:   db.prepare("DELETE FROM submissions WHERE id = ?").run(submissionId);
+  670:   db.prepare("DELETE FROM persons WHERE id = ?").run(personId);
+  671: }
+### supabase/schema.sql
+    1: -- M3 Memory V0.1 production Supabase schema.
+    2: -- Apply only to a new empty Supabase project. Do not import old memories or lore.
+    3: 
+    4: create extension if not exists pgcrypto;
+    5: 
+    6: create table if not exists public.m3_admins (
+    7:   id uuid primary key default gen_random_uuid(),
+    8:   user_id uuid unique,
+    9:   email text unique,
+   10:   created_at timestamptz not null default now(),
+   11:   check (user_id is not null or email is not null)
+   12: );
+   13: 
+   14: create table if not exists public.persons (
+   15:   id uuid primary key default gen_random_uuid(),
+   16:   display_name text not null,
+   17:   contact text,
+   18:   created_at timestamptz not null default now()
+   19: );
+   20: 
+   21: create table if not exists public.submissions (
+   22:   id uuid primary key default gen_random_uuid(),
+   23:   submitter_person_id uuid references public.persons(id),
+   24:   original_json jsonb not null,
+   25:   memory_preview text not null,
+   26:   encounter_date text,
+   27:   is_approximate_date boolean not null default false,
+   28:   location_name text,
+   29:   city text,
+   30:   region text,
+   31:   country text,
+   32:   event_name text,
+   33:   media_link text,
+   34:   media_consent boolean not null default false,
+   35:   attribution_preference text default 'anonymous',
+   36:   preferred_attribution text,
+   37:   book_note text,
+   38:   final_notes text,
+   39:   status text not null default 'UNREVIEWED' check (status in ('UNREVIEWED', 'IN_REVIEW', 'REVIEWED', 'APPROVED_FOR_STORY', 'REJECTED', 'ARCHIVED')),
+   40:   created_at timestamptz not null default now(),
+   41:   updated_at timestamptz not null default now()
+   42: );
+   43: 
+   44: create table if not exists public.reviews (
+   45:   id uuid primary key default gen_random_uuid(),
+   46:   submission_id uuid not null unique references public.submissions(id) on delete cascade,
+   47:   notes text,
+   48:   remembered text,
+   49:   corrections text,
+   50:   context text,
+   51:   people text,
+   52:   tags text,
+   53:   importance integer check (importance between 1 and 5),
+   54:   emotional_significance integer check (emotional_significance between 1 and 5),
+   55:   historical_significance integer check (historical_significance between 1 and 5),
+   56:   accuracy_confidence integer check (accuracy_confidence between 1 and 5),
+   57:   book_potential integer check (book_potential between 1 and 5),
+   58:   chapter_category text,
+   59:   private_notes text,
+   60:   created_at timestamptz not null default now(),
+   61:   updated_at timestamptz not null default now()
+   62: );
+   63: 
+   64: create table if not exists public.media (
+   65:   id uuid primary key default gen_random_uuid(),
+   66:   submission_id uuid not null references public.submissions(id) on delete cascade,
+   67:   file_name text not null,
+   68:   mime_type text not null,
+   69:   storage_path text not null,
+   70:   size_bytes bigint not null,
+   71:   created_at timestamptz not null default now()
+   72: );
+   73: 
+   74: create table if not exists public.artifacts (
+   75:   id uuid primary key default gen_random_uuid(),
+   76:   submission_id uuid not null references public.submissions(id) on delete cascade,
+   77:   label text not null,
+   78:   notes text,
+   79:   created_at timestamptz not null default now()
+   80: );
+   81: 
+   82: create table if not exists public.story_drafts (
+   83:   id uuid primary key default gen_random_uuid(),
+   84:   submission_id uuid not null references public.submissions(id) on delete cascade,
+   85:   label text not null default 'AI-GENERATED DRAFT',
+   86:   draft_text text not null,
+   87:   approved_at timestamptz,
+   88:   created_at timestamptz not null default now()
+   89: );
+   90: 
+   91: create index if not exists idx_m3_admins_user_id on public.m3_admins(user_id);
+   92: create index if not exists idx_m3_admins_email on public.m3_admins(email);
+   93: create index if not exists idx_submissions_status on public.submissions(status);
+   94: create index if not exists idx_submissions_created_at on public.submissions(created_at desc);
+   95: create index if not exists idx_reviews_submission_id on public.reviews(submission_id);
+   96: 
+   97: create or replace function public.is_m3_admin()
+   98: returns boolean
+   99: language sql
+  100: security definer
+  101: set search_path = public
+  102: as $$
+  103:   select exists (
+  104:     select 1
+  105:     from public.m3_admins
+  106:     where user_id = auth.uid()
+  107:        or lower(email) = lower(auth.jwt()->>'email')
+  108:   );
+  109: $$;
+  110: 
+  111: create or replace function public.trigger_update_updated_at()
+  112: returns trigger
+  113: language plpgsql
+  114: set search_path = public
+  115: as $$
+  116: begin
+  117:   new.updated_at = now();
+  118:   return new;
+  119: end;
+  120: $$;
+  121: 
+  122: drop trigger if exists update_submissions_updated_at on public.submissions;
+  123: create trigger update_submissions_updated_at
+  124: before update on public.submissions
+  125: for each row execute function public.trigger_update_updated_at();
+  126: 
+  127: drop trigger if exists update_reviews_updated_at on public.reviews;
+  128: create trigger update_reviews_updated_at
+  129: before update on public.reviews
+  130: for each row execute function public.trigger_update_updated_at();
+  131: 
+  132: alter table public.m3_admins enable row level security;
+  133: alter table public.persons enable row level security;
+  134: alter table public.submissions enable row level security;
+  135: alter table public.reviews enable row level security;
+  136: alter table public.media enable row level security;
+  137: alter table public.artifacts enable row level security;
+  138: alter table public.story_drafts enable row level security;
+  139: 
+  140: revoke all on public.m3_admins from anon, authenticated;
+  141: revoke all on public.persons from anon, authenticated;
+  142: revoke all on public.submissions from anon, authenticated;
+  143: revoke all on public.reviews from anon, authenticated;
+  144: revoke all on public.media from anon, authenticated;
+  145: revoke all on public.artifacts from anon, authenticated;
+  146: revoke all on public.story_drafts from anon, authenticated;
+  147: 
+  148: grant select on public.m3_admins to authenticated;
+  149: grant select on public.persons to authenticated;
+  150: grant select on public.submissions to authenticated;
+  151: grant update(status, updated_at) on public.submissions to authenticated;
+  152: grant insert, select on public.reviews to authenticated;
+  153: grant update(
+  154:   notes,
+  155:   remembered,
+  156:   corrections,
+  157:   context,
+  158:   people,
+  159:   tags,
+  160:   importance,
+  161:   emotional_significance,
+  162:   historical_significance,
+  163:   accuracy_confidence,
+  164:   book_potential,
+  165:   chapter_category,
+  166:   private_notes,
+  167:   updated_at
+  168: ) on public.reviews to authenticated;
+  169: grant insert, select, update on public.story_drafts to authenticated;
+  170: 
+  171: create policy admin_read_allowlist on public.m3_admins
+  172: for select to authenticated
+  173: using (public.is_m3_admin());
+  174: 
+  175: create policy admin_read_persons on public.persons
+  176: for select to authenticated
+  177: using (public.is_m3_admin());
+  178: 
+  179: create policy admin_read_submissions on public.submissions
+  180: for select to authenticated
+  181: using (public.is_m3_admin());
+  182: 
+  183: create policy admin_update_submission_status on public.submissions
+  184: for update to authenticated
+  185: using (public.is_m3_admin())
+  186: with check (public.is_m3_admin());
+  187: 
+  188: create policy admin_read_reviews on public.reviews
+  189: for select to authenticated
+  190: using (public.is_m3_admin());
+  191: 
+  192: create policy admin_insert_reviews on public.reviews
+  193: for insert to authenticated
+  194: with check (public.is_m3_admin());
+  195: 
+  196: create policy admin_update_reviews on public.reviews
+  197: for update to authenticated
+  198: using (public.is_m3_admin())
+  199: with check (public.is_m3_admin());
+  200: 
+  201: create policy admin_read_story_drafts on public.story_drafts
+  202: for select to authenticated
+  203: using (public.is_m3_admin());
+  204: 
+  205: create policy admin_insert_story_drafts on public.story_drafts
+  206: for insert to authenticated
+  207: with check (public.is_m3_admin());
+  208: 
+  209: create policy admin_update_story_drafts on public.story_drafts
+  210: for update to authenticated
+  211: using (public.is_m3_admin())
+  212: with check (public.is_m3_admin());
+  213: 
+  214: create policy admin_read_media on public.media
+  215: for select to authenticated
+  216: using (public.is_m3_admin());
+  217: 
+  218: -- No anon policies are created. Public submissions and media are inserted only through the
+  219: -- Next.js server path with SUPABASE_SERVICE_ROLE_KEY (which bypasses RLS). Media and story drafts are admin-only
+  220: -- and never accessible to anonymous or non-admin authenticated users. Media table defaults to default-deny
+  221: -- (RLS enabled, no insert/update/delete grants to any role, insert through service role only).
+  222: 
+  223: -- ---------------------------------------------------------------------------------------------------------------
+  224: -- Contributor write capability (docs/MUSEUM_CONTRIBUTOR_CAPABILITY_DESIGN.md). One row per submission with an open
+  225: -- contributor window. Stores SHA-256(token) only, never the raw token. Readable and writable only by the service
+  226: -- role, which the server uses from two narrow helpers. No policy and no grant exists for anon or authenticated.
+  227: -- ---------------------------------------------------------------------------------------------------------------
+  228: create table if not exists public.contributor_capabilities (
+  229:   submission_id uuid primary key,
+  230:   token_hash text not null,
+  231:   expires_at timestamptz not null,
+  232:   created_at timestamptz not null default now()
+  233: );
+  234: 
+  235: create index if not exists contributor_capabilities_expires_idx on public.contributor_capabilities (expires_at);
+  236: 
+  237: alter table public.contributor_capabilities enable row level security;
+  238: revoke all on public.contributor_capabilities from anon, authenticated;
+  239: -- Deliberately no policies: no application role other than the server's service key may read or write this table.
+  240: 
+  241: -- Scheduled cleanup (open decision: scheduler). Removes expired capabilities and contributor person rows that no
+  242: -- submission references. The 2-hour guard protects a person row that another request is creating right now.
+  243: -- Executable only by the database owner or the service role, never by anon or authenticated.
+  244: create or replace function public.contributor_purge_expired()
+  245: returns integer
+  246: language plpgsql
+  247: security definer
+  248: set search_path = public
+  249: as $$
+  250: declare
+  251:   removed_capabilities integer := 0;
+  252:   removed_people integer := 0;
+  253: begin
+  254:   delete from public.contributor_capabilities where expires_at < now();
+  255:   get diagnostics removed_capabilities = row_count;
+  256: 
+  257:   delete from public.persons p
+  258:    where p.created_at < now() - interval '2 hours'
+  259:      and not exists (select 1 from public.submissions s where s.submitter_person_id = p.id);
+  260:   get diagnostics removed_people = row_count;
+  261: 
+  262:   return removed_capabilities + removed_people;
+  263: end;
+  264: $$;
+  265: 
+  266: revoke all on function public.contributor_purge_expired() from public, anon, authenticated;
+### src/app/remember/MediaPicker.tsx
+    1: "use client";
+    2: 
+    3: import { useState } from "react";
+    4: 
+    5: interface MediaFile {
+    6:   file: File;
+    7:   preview: string;
+    8:   id: string;
+    9: }
+   10: 
+   11: export function MediaPicker() {
+   12:   const [selectedFiles, setSelectedFiles] = useState<MediaFile[]>([]);
+   13:   const [error, setError] = useState<string>("");
+   14: 
+   15:   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+   16:     setError("");
+   17:     const files = Array.from(e.currentTarget.files || []);
+   18: 
+   19:     if (selectedFiles.length + files.length > 5) {
+   20:       setError("Maximum 5 files allowed");
+   21:       return;
+   22:     }
+   23: 
+   24:     const newFiles = files.map((file) => ({
+   25:       file,
+   26:       preview: URL.createObjectURL(file),
+   27:       id: Math.random().toString(36).slice(2),
+   28:     }));
+   29: 
+   30:     setSelectedFiles((prev) => [...prev, ...newFiles]);
+   31:   };
+   32: 
+   33:   const removeFile = (id: string) => {
+   34:     setSelectedFiles((prev) => {
+   35:       const file = prev.find((f) => f.id === id);
+   36:       if (file) URL.revokeObjectURL(file.preview);
+   37:       return prev.filter((f) => f.id !== id);
+   38:     });
+   39:   };
+   40: 
+   41:   return (
+   42:     <div>
+   43:       <div className="field">
+   44:         <label>Upload photos (JPEG, PNG, WebP)</label>
+   45:         <input
+   46:           type="file"
+   47:           name="media"
+   48:           multiple
+   49:           accept="image/jpeg,image/png,image/webp"
+   50:           onChange={handleFileSelect}
+   51:         />
+   52:         <p className="micro-note">
+   53:           Up to 5 images, 8MB each. These stay private unless you enable Media Consent below.
+   54:         </p>
+   55:       </div>
+   56: 
+   57:       {error && <p style={{ color: "var(--error-red)", fontSize: "13px" }}>{error}</p>}
+   58: 
+   59:       {selectedFiles.length > 0 && (
+   60:         <div style={{ marginTop: "16px" }}>
+   61:           <p style={{ fontSize: "13px", fontWeight: "500", marginBottom: "8px" }}>
+   62:             Selected files ({selectedFiles.length}/5):
+   63:           </p>
+   64:           <div
+   65:             style={{
+   66:               display: "grid",
+   67:               gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
+   68:               gap: "8px",
+   69:             }}
+   70:           >
+   71:             {selectedFiles.map((item) => (
+   72:               <div
+   73:                 key={item.id}
+   74:                 style={{
+   75:                   position: "relative",
+   76:                   aspectRatio: "1",
+   77:                   background: "var(--bg-soft)",
+   78:                   borderRadius: "4px",
+   79:                   overflow: "hidden",
+   80:                   fontSize: "11px",
+   81:                 }}
+   82:               >
+   83:                 <img
+   84:                   src={item.preview}
+   85:                   alt={item.file.name}
+   86:                   style={{
+   87:                     width: "100%",
+   88:                     height: "100%",
+   89:                     objectFit: "cover",
+   90:                   }}
+   91:                 />
+   92:                 <button
+   93:                   type="button"
+   94:                   onClick={() => removeFile(item.id)}
+   95:                   style={{
+   96:                     position: "absolute",
+   97:                     top: "2px",
+   98:                     right: "2px",
+   99:                     width: "20px",
+  100:                     height: "20px",
+  101:                     padding: "0",
+  102:                     background: "rgba(0,0,0,0.6)",
+  103:                     color: "white",
+  104:                     border: "none",
+  105:                     borderRadius: "2px",
+  106:                     cursor: "pointer",
+  107:                     fontSize: "12px",
+  108:                     lineHeight: "1",
+  109:                   }}
+  110:                   aria-label={`Remove ${item.file.name}`}
+  111:                 >
+  112:                   âœ•
+  113:                 </button>
+  114:                 <div
+  115:                   style={{
+  116:                     position: "absolute",
+  117:                     bottom: "0",
+  118:                     width: "100%",
+  119:                     background: "rgba(0,0,0,0.5)",
+  120:                     color: "white",
+  121:                     padding: "2px",
+  122:                     fontSize: "9px",
+  123:                     overflow: "hidden",
+  124:                     textOverflow: "ellipsis",
+  125:                     whiteSpace: "nowrap",
+  126:                   }}
+  127:                   title={item.file.name}
+  128:                 >
+  129:                   {item.file.name}
+  130:                 </div>
+  131:               </div>
+  132:             ))}
+  133:           </div>
+  134:         </div>
+  135:       )}
+  136:     </div>
+  137:   );
+  138: }
+
+exec
+"C:\\Users\\yerie\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe" -Command '$specs=@(@{f='"'src/lib/supabase.ts';a=130;b=240},@{f='src/lib/supabase.ts';a=300;b=430},@{f='src/lib/db.ts';a=490;b=575},@{f='src/lib/db.ts';a=650;b=675}); foreach("'$s in $specs){Write-Output "### $($s.f) $($s.a)-$($s.b)"; $lines=Get-Content $s.f; for($i=$s.a;$i -le [Math]::Min($s.b,$lines.Count);$i++){'"'{0,5}: {1}' -f "'$i,$lines[$i-1]}}; rg -n "uploadSupabaseMedia|insertSupabaseMediaRows|deleteSupabaseSubmissionRecords|storage/v1|upsert|media" src/lib/supabase.ts src/lib/db.ts src/app/admin/media -g '"'*.ts'" in C:\Users\yerie\m3-memory
+ succeeded in 380ms:
+### src/lib/supabase.ts 130-240
+  130:   if (!data?.access_token || !data?.user?.id) return null;
+  131:   return {
+  132:     accessToken: String(data.access_token),
+  133:     userId: String(data.user.id),
+  134:     email: String(data.user.email || email)
+  135:   };
+  136: }
+  137: 
+  138: export async function getSupabaseUser(accessToken: string, fetchImpl: FetchLike = fetch) {
+  139:   const config = getSupabaseConfig(false);
+  140:   const data = await request(`${config.url}/auth/v1/user`, {
+  141:     method: "GET",
+  142:     headers: headers(config.anonKey, accessToken)
+  143:   }, fetchImpl).catch(() => null) as any;
+  144: 
+  145:   if (!data?.id) return null;
+  146:   return { userId: String(data.id), email: String(data.email || "") };
+  147: }
+  148: 
+  149: export async function isSupabaseAdmin(accessToken: string, fetchImpl: FetchLike = fetch) {
+  150:   const config = getSupabaseConfig(false);
+  151:   const rows = await request(`${config.url}/rest/v1/m3_admins?select=id&limit=1`, {
+  152:     method: "GET",
+  153:     headers: headers(config.anonKey, accessToken)
+  154:   }, fetchImpl).catch(() => []) as any[];
+  155:   return Array.isArray(rows) && rows.length > 0;
+  156: }
+  157: 
+  158: export async function verifySupabaseAdminToken(accessToken: string, fetchImpl: FetchLike = fetch) {
+  159:   const user = await getSupabaseUser(accessToken, fetchImpl);
+  160:   if (!user) return null;
+  161:   if (!(await isSupabaseAdmin(accessToken, fetchImpl))) return null;
+  162:   return { accessToken, ...user } satisfies SupabaseAdminSession;
+  163: }
+  164: 
+  165: export async function createSupabaseSubmission(record: NormalizedSubmission, fetchImpl: FetchLike = fetch) {
+  166:   const config = getSupabaseConfig(true);
+  167:   await request(`${config.url}/rest/v1/persons`, {
+  168:     method: "POST",
+  169:     headers: { ...headers(config.serviceRoleKey), prefer: "return=minimal" },
+  170:     body: JSON.stringify({
+  171:       id: record.personId,
+  172:       display_name: record.original.submitterName,
+  173:       contact: record.original.contact || null,
+  174:       created_at: record.createdAt
+  175:     })
+  176:   }, fetchImpl);
+  177: 
+  178:   await request(`${config.url}/rest/v1/submissions`, {
+  179:     method: "POST",
+  180:     headers: { ...headers(config.serviceRoleKey), prefer: "return=minimal" },
+  181:     body: JSON.stringify({
+  182:       id: record.id,
+  183:       submitter_person_id: record.personId,
+  184:       original_json: record.original,
+  185:       memory_preview: record.memoryPreview,
+  186:       encounter_date: record.encounterDate,
+  187:       is_approximate_date: record.isApproximateDate,
+  188:       location_name: record.locationName,
+  189:       city: record.city,
+  190:       region: record.region,
+  191:       country: record.country,
+  192:       event_name: record.eventName,
+  193:       media_link: record.original.mediaLink || null,
+  194:       media_consent: record.original.mediaConsent || false,
+  195:       status: "UNREVIEWED",
+  196:       created_at: record.createdAt,
+  197:       updated_at: record.createdAt
+  198:     })
+  199:   }, fetchImpl);
+  200: 
+  201:   return record.id;
+  202: }
+  203: 
+  204: export async function listSupabaseSubmissions(adminToken: string, fetchImpl: FetchLike = fetch) {
+  205:   const config = getSupabaseConfig(false);
+  206:   return request(`${config.url}/rest/v1/submissions?select=id,status,memory_preview,encounter_date,location_name,city,region,country,event_name,created_at,persons(display_name)&order=created_at.desc`, {
+  207:     method: "GET",
+  208:     headers: headers(config.anonKey, adminToken)
+  209:   }, fetchImpl) as Promise<any[]>;
+  210: }
+  211: 
+  212: export async function getSupabaseSubmission(id: string, adminToken: string, fetchImpl: FetchLike = fetch) {
+  213:   const config = getSupabaseConfig(false);
+  214:   const rows = await request(`${config.url}/rest/v1/submissions?select=*,persons(display_name,contact),reviews(*)&id=eq.${encodeURIComponent(id)}&limit=1`, {
+  215:     method: "GET",
+  216:     headers: headers(config.anonKey, adminToken)
+  217:   }, fetchImpl) as any[];
+  218:   return rows[0] || null;
+  219: }
+  220: 
+  221: export async function upsertSupabaseReview(submissionId: string, review: NormalizedReview, adminToken?: string | null, fetchImpl: FetchLike = fetch) {
+  222:   if (!adminToken) throw new Error("UNAUTHENTICATED");
+  223:   const config = getSupabaseConfig(false);
+  224:   const existing = await request(`${config.url}/rest/v1/reviews?select=id&submission_id=eq.${encodeURIComponent(submissionId)}&limit=1`, {
+  225:     method: "GET",
+  226:     headers: headers(config.anonKey, adminToken)
+  227:   }, fetchImpl) as any[];
+  228: 
+  229:   const reviewPayload = {
+  230:     notes: review.notes,
+  231:     remembered: review.remembered,
+  232:     corrections: review.corrections,
+  233:     context: review.context,
+  234:     people: review.people,
+  235:     tags: review.tags,
+  236:     importance: review.importance,
+  237:     emotional_significance: review.emotional_significance,
+  238:     historical_significance: review.historical_significance,
+  239:     accuracy_confidence: review.accuracy_confidence,
+  240:     book_potential: review.book_potential,
+### src/lib/supabase.ts 300-430
+  300: export async function uploadSupabaseMedia(submissionId: string, fileName: string, fileBuffer: Uint8Array | Buffer, contentType: string, fetchImpl: FetchLike = fetch) {
+  301:   const config = getSupabaseConfig(true);
+  302:   const storagePath = `submissions/${submissionId}/${randomUUID()}-${sanitizeFileName(fileName)}`;
+  303: 
+  304:   const body = Buffer.isBuffer(fileBuffer) ? new Uint8Array(fileBuffer) : fileBuffer;
+  305: 
+  306:   await request(`${config.url}/storage/v1/object/submission-media/${encodeURIComponent(storagePath)}`, {
+  307:     method: "POST",
+  308:     headers: { authorization: `Bearer ${config.serviceRoleKey}` },
+  309:     body: body as BodyInit
+  310:   }, fetchImpl);
+  311: 
+  312:   return storagePath;
+  313: }
+  314: 
+  315: export async function insertSupabaseMediaRows(submissionId: string, files: Array<{ fileName: string; mimeType: string; sizeBytes: number; storagePath: string }>, adminToken: string, fetchImpl: FetchLike = fetch) {
+  316:   const config = getSupabaseConfig(false);
+  317:   const createdAt = new Date().toISOString();
+  318: 
+  319:   const mediaRows = files.map(f => ({
+  320:     id: randomUUID(),
+  321:     submission_id: submissionId,
+  322:     file_name: f.fileName,
+  323:     mime_type: f.mimeType,
+  324:     storage_path: f.storagePath,
+  325:     size_bytes: f.sizeBytes,
+  326:     created_at: createdAt
+  327:   }));
+  328: 
+  329:   await request(`${config.url}/rest/v1/media`, {
+  330:     method: "POST",
+  331:     headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
+  332:     body: JSON.stringify(mediaRows)
+  333:   }, fetchImpl);
+  334: }
+  335: 
+  336: export async function getSupabaseSubmissionMedia(submissionId: string, adminToken: string, fetchImpl: FetchLike = fetch) {
+  337:   const config = getSupabaseConfig(false);
+  338:   return request(`${config.url}/rest/v1/media?submission_id=eq.${encodeURIComponent(submissionId)}&order=created_at.asc`, {
+  339:     method: "GET",
+  340:     headers: headers(config.anonKey, adminToken)
+  341:   }, fetchImpl) as Promise<any[]>;
+  342: }
+  343: 
+  344: function sanitizeFileName(name: string): string {
+  345:   return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 200);
+  346: }
+  347: 
+  348: export async function updateSupabaseSubmissionPreferences(submissionId: string, preferences: { attributionPreference?: string; preferredAttribution?: string; bookNote?: string; finalNotes?: string }, adminToken: string, fetchImpl: FetchLike = fetch) {
+  349:   const config = getSupabaseConfig(false);
+  350:   const updatedAt = new Date().toISOString();
+  351: 
+  352:   const payload = {
+  353:     attribution_preference: preferences.attributionPreference || "anonymous",
+  354:     preferred_attribution: preferences.preferredAttribution || null,
+  355:     book_note: preferences.bookNote || null,
+  356:     final_notes: preferences.finalNotes || null,
+  357:     updated_at: updatedAt
+  358:   };
+  359: 
+  360:   await request(`${config.url}/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, {
+  361:     method: "PATCH",
+  362:     headers: { ...headers(config.anonKey, adminToken), prefer: "return=minimal" },
+  363:     body: JSON.stringify(payload)
+  364:   }, fetchImpl);
+  365: }
+  366: 
+  367: // ---- Contributor capability store. Narrow, service-role only. See docs/MUSEUM_CONTRIBUTOR_CAPABILITY_DESIGN.md. ----
+  368: // These four functions are the only service-role writes for contributor capabilities. They never accept a bearer
+  369: // or admin token, and every filter is built from values the caller verified. Row counts are checked, so a
+  370: // zero-row or wrong-row response is a failure, not a success.
+  371: 
+  372: export async function insertSupabaseCapability(submissionId: string, tokenHash: string, expiresAt: string, fetchImpl: FetchLike = fetch) {
+  373:   const config = getSupabaseConfig(true);
+  374:   await request(`${config.url}/rest/v1/contributor_capabilities`, {
+  375:     method: "POST",
+  376:     headers: { ...headers(config.serviceRoleKey), prefer: "return=minimal" },
+  377:     body: JSON.stringify({ submission_id: submissionId, token_hash: tokenHash, expires_at: expiresAt })
+  378:   }, fetchImpl);
+  379: }
+  380: 
+  381: /** Consume-first: the DELETE is the single-use gate. Returns true only when exactly the expected row was removed. */
+  382: export async function consumeSupabaseCapability(submissionId: string, tokenHash: string, nowIso: string, fetchImpl: FetchLike = fetch) {
+  383:   const config = getSupabaseConfig(true);
+  384:   const url = `${config.url}/rest/v1/contributor_capabilities?submission_id=eq.${encodeURIComponent(submissionId)}`
+  385:     + `&token_hash=eq.${encodeURIComponent(tokenHash)}&expires_at=gt.${encodeURIComponent(nowIso)}&select=submission_id`;
+  386:   const rows = await request(url, {
+  387:     method: "DELETE",
+  388:     headers: { ...headers(config.serviceRoleKey), prefer: "return=representation" }
+  389:   }, fetchImpl);
+  390:   return Array.isArray(rows) && rows.length === 1 && rows[0]?.submission_id === submissionId;
+  391: }
+  392: 
+  393: /** Save the four contributor-owned fields. Guarded by status: only an UNREVIEWED row can change. */
+  394: export async function saveSupabaseContributorPreferences(submissionId: string, fields: { attributionPreference: string; preferredAttribution: string | null; bookNote: string | null; finalNotes: string | null }, fetchImpl: FetchLike = fetch) {
+  395:   const config = getSupabaseConfig(true);
+  396:   const url = `${config.url}/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}&status=eq.UNREVIEWED&select=id`;
+  397:   const rows = await request(url, {
+  398:     method: "PATCH",
+  399:     headers: { ...headers(config.serviceRoleKey), prefer: "return=representation" },
+  400:     body: JSON.stringify({
+  401:       attribution_preference: fields.attributionPreference,
+  402:       preferred_attribution: fields.preferredAttribution,
+  403:       book_note: fields.bookNote,
+  404:       final_notes: fields.finalNotes
+  405:     })
+  406:   }, fetchImpl);
+  407:   return Array.isArray(rows) && rows.length === 1 && rows[0]?.id === submissionId;
+  408: }
+  409: 
+  410: /** Compensation for a failed creation: capability, submission, then person. Each delete is keyed by a verified id. */
+  411: export async function deleteSupabaseSubmissionRecords(submissionId: string, personId: string, fetchImpl: FetchLike = fetch) {
+  412:   const config = getSupabaseConfig(true);
+  413:   const auth = { ...headers(config.serviceRoleKey), prefer: "return=minimal" };
+  414:   await request(`${config.url}/rest/v1/contributor_capabilities?submission_id=eq.${encodeURIComponent(submissionId)}`, { method: "DELETE", headers: auth }, fetchImpl);
+  415:   await request(`${config.url}/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, { method: "DELETE", headers: auth }, fetchImpl);
+  416:   await request(`${config.url}/rest/v1/persons?id=eq.${encodeURIComponent(personId)}`, { method: "DELETE", headers: auth }, fetchImpl);
+  417: }
+### src/lib/db.ts 490-575
+  490:     draftId,
+  491:     submissionId,
+  492:     label,
+  493:     draftText,
+  494:     createdAt
+  495:   );
+  496: 
+  497:   return draftId;
+  498: }
+  499: 
+  500: export async function getStoryDrafts(submissionId: string, adminToken?: string | null) {
+  501:   if (getPersistenceMode() === "supabase") {
+  502:     const token = requireSupabaseAdminToken(adminToken);
+  503:     return getSupabaseStoryDrafts(submissionId, token);
+  504:   }
+  505: 
+  506:   const db = getDb();
+  507:   return (db.prepare("SELECT * FROM story_drafts WHERE submission_id = ? ORDER BY created_at DESC").all(submissionId) as any[]) || [];
+  508: }
+  509: 
+  510: export async function updateStoryDraft(draftId: string, label: string, draftText: string, adminToken?: string | null) {
+  511:   if (getPersistenceMode() === "supabase") {
+  512:     const token = requireSupabaseAdminToken(adminToken);
+  513:     await updateSupabaseStoryDraft(draftId, label, draftText, token);
+  514:     return;
+  515:   }
+  516: 
+  517:   const db = getDb();
+  518: 
+  519:   db.prepare(`
+  520:     UPDATE story_drafts SET label = ?, draft_text = ? WHERE id = ?
+  521:   `).run(
+  522:     label,
+  523:     draftText,
+  524:     draftId
+  525:   );
+  526: }
+  527: 
+  528: // Media upload validation and persistence
+  529: const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024; // 8 MB
+  530: const MAX_FILES_PER_SUBMISSION = 5;
+  531: const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+  532: 
+  533: export interface MediaUploadInput {
+  534:   fileName: string;
+  535:   mimeType: string;
+  536:   sizeBytes: number;
+  537: }
+  538: 
+  539: export function validateMediaUpload(files: MediaUploadInput[]) {
+  540:   if (files.length > MAX_FILES_PER_SUBMISSION) {
+  541:     throw new Error("TOO_MANY_FILES");
+  542:   }
+  543: 
+  544:   for (const file of files) {
+  545:     if (!file.mimeType || !ALLOWED_MIME_TYPES.has(file.mimeType)) {
+  546:       throw new Error("INVALID_MIME_TYPE");
+  547:     }
+  548:     if (file.sizeBytes > MAX_FILE_SIZE_BYTES) {
+  549:       throw new Error("FILE_TOO_LARGE");
+  550:     }
+  551:   }
+  552: }
+  553: 
+  554: export async function insertMediaRows(submissionId: string, files: Array<{ fileName: string; mimeType: string; sizeBytes: number; storagePath: string }>, adminToken?: string | null) {
+  555:   if (getPersistenceMode() === "supabase") {
+  556:     const token = requireSupabaseAdminToken(adminToken);
+  557:     return insertSupabaseMediaRows(submissionId, files, token);
+  558:   }
+  559: 
+  560:   const db = getDb();
+  561:   const createdAt = now();
+  562: 
+  563:   for (const file of files) {
+  564:     db.prepare(`
+  565:       INSERT INTO media (id, submission_id, file_name, mime_type, storage_path, size_bytes, created_at)
+  566:       VALUES (?, ?, ?, ?, ?, ?, ?)
+  567:     `).run(
+  568:       randomUUID(),
+  569:       submissionId,
+  570:       file.fileName,
+  571:       file.mimeType,
+  572:       file.storagePath,
+  573:       file.sizeBytes,
+  574:       createdAt
+  575:     );
+### src/lib/db.ts 650-675
+  650: ) {
+  651:   if (getPersistenceMode() === "supabase") {
+  652:     return saveSupabaseContributorPreferences(submissionId, fields);
+  653:   }
+  654:   const result = getDb()
+  655:     .prepare(`UPDATE submissions SET attribution_preference = ?, preferred_attribution = ?, book_note = ?, final_notes = ?, updated_at = ?
+  656:               WHERE id = ? AND status = 'UNREVIEWED'`)
+  657:     .run(fields.attributionPreference, fields.preferredAttribution, fields.bookNote, fields.finalNotes, now(), submissionId);
+  658:   return Number(result.changes) === 1;
+  659: }
+  660: 
+  661: /** Compensation for a failed creation. Best effort; the caller logs a category, never the ids. */
+  662: export async function deleteSubmissionRecords(submissionId: string, personId: string) {
+  663:   if (getPersistenceMode() === "supabase") {
+  664:     await deleteSupabaseSubmissionRecords(submissionId, personId);
+  665:     return;
+  666:   }
+  667:   const db = getDb();
+  668:   db.prepare("DELETE FROM contributor_capabilities WHERE submission_id = ?").run(submissionId);
+  669:   db.prepare("DELETE FROM submissions WHERE id = ?").run(submissionId);
+  670:   db.prepare("DELETE FROM persons WHERE id = ?").run(personId);
+  671: }
+src/lib/db.ts:12:  upsertSupabaseReview,
+src/lib/db.ts:16:  uploadSupabaseMedia,
+src/lib/db.ts:17:  insertSupabaseMediaRows,
+src/lib/db.ts:21:  deleteSupabaseSubmissionRecords,
+src/lib/db.ts:58:      media_link TEXT,
+src/lib/db.ts:59:      media_consent INTEGER NOT NULL DEFAULT 0,
+src/lib/db.ts:87:    CREATE TABLE IF NOT EXISTS media (
+src/lib/db.ts:128:  // Ensure media columns exist (additive, safe to run multiple times)
+src/lib/db.ts:130:    db.exec("ALTER TABLE submissions ADD COLUMN media_link TEXT");
+src/lib/db.ts:135:    db.exec("ALTER TABLE submissions ADD COLUMN media_consent INTEGER NOT NULL DEFAULT 0");
+src/lib/db.ts:221:    mediaLink: text(input.mediaLink, 500),
+src/lib/db.ts:222:    mediaConsent: Boolean(input.mediaConsent),
+src/lib/db.ts:291:      media_link, media_consent,
+src/lib/db.ts:306:    record.original.mediaLink || null,
+src/lib/db.ts:307:    record.original.mediaConsent ? 1 : 0,
+src/lib/db.ts:401:export async function upsertReview(submissionId: string, input: ReviewInput, adminToken?: string | null) {
+src/lib/db.ts:405:    await upsertSupabaseReview(submissionId, review, requireSupabaseAdminToken(adminToken));
+src/lib/db.ts:557:    return insertSupabaseMediaRows(submissionId, files, token);
+src/lib/db.ts:565:      INSERT INTO media (id, submission_id, file_name, mime_type, storage_path, size_bytes, created_at)
+src/lib/db.ts:586:  return (db.prepare("SELECT id, file_name, mime_type, storage_path, size_bytes, created_at FROM media WHERE submission_id = ? ORDER BY created_at ASC").all(submissionId) as any[]) || [];
+src/lib/db.ts:589:// Act III preference update (PATCH) — lightweight, does not touch original_json or media
+src/lib/db.ts:664:    await deleteSupabaseSubmissionRecords(submissionId, personId);
+src/lib/supabase.ts:193:      media_link: record.original.mediaLink || null,
+src/lib/supabase.ts:194:      media_consent: record.original.mediaConsent || false,
+src/lib/supabase.ts:221:export async function upsertSupabaseReview(submissionId: string, review: NormalizedReview, adminToken?: string | null, fetchImpl: FetchLike = fetch) {
+src/lib/supabase.ts:300:export async function uploadSupabaseMedia(submissionId: string, fileName: string, fileBuffer: Uint8Array | Buffer, contentType: string, fetchImpl: FetchLike = fetch) {
+src/lib/supabase.ts:306:  await request(`${config.url}/storage/v1/object/submission-media/${encodeURIComponent(storagePath)}`, {
+src/lib/supabase.ts:315:export async function insertSupabaseMediaRows(submissionId: string, files: Array<{ fileName: string; mimeType: string; sizeBytes: number; storagePath: string }>, adminToken: string, fetchImpl: FetchLike = fetch) {
+src/lib/supabase.ts:319:  const mediaRows = files.map(f => ({
+src/lib/supabase.ts:329:  await request(`${config.url}/rest/v1/media`, {
+src/lib/supabase.ts:332:    body: JSON.stringify(mediaRows)
+src/lib/supabase.ts:338:  return request(`${config.url}/rest/v1/media?submission_id=eq.${encodeURIComponent(submissionId)}&order=created_at.asc`, {
+src/lib/supabase.ts:411:export async function deleteSupabaseSubmissionRecords(submissionId: string, personId: string, fetchImpl: FetchLike = fetch) {
+src/app/admin/media\[mediaId]\route.ts:7:  { params }: { params: Promise<{ mediaId: string }> }
+src/app/admin/media\[mediaId]\route.ts:15:  const { mediaId } = await params;
+src/app/admin/media\[mediaId]\route.ts:20:    const mediaRes = await fetch(
+src/app/admin/media\[mediaId]\route.ts:21:      `${config.url}/rest/v1/media?id=eq.${encodeURIComponent(mediaId)}&select=*`,
+src/app/admin/media\[mediaId]\route.ts:31:    if (!mediaRes.ok) {
+src/app/admin/media\[mediaId]\route.ts:35:    const mediaRows = await mediaRes.json();
+src/app/admin/media\[mediaId]\route.ts:36:    if (!Array.isArray(mediaRows) || mediaRows.length === 0) {
+src/app/admin/media\[mediaId]\route.ts:40:    const media = mediaRows[0];
+src/app/admin/media\[mediaId]\route.ts:41:    const storagePath = media.storage_path;
+src/app/admin/media\[mediaId]\route.ts:44:      `${config.url}/storage/v1/object/authenticated/submission-media/${encodeURIComponent(storagePath)}`,
+src/app/admin/media\[mediaId]\route.ts:60:        "content-type": media.mime_type || "application/octet-stream",
+src/app/admin/media\[mediaId]\route.ts:61:        "content-disposition": `inline; filename="${media.file_name}"`,
+src/app/admin/media\[mediaId]\route.ts:66:    console.error("Failed to fetch media:", error);
+
+exec
+"C:\\Users\\yerie\\AppData\\Local\\Microsoft\\WindowsApps\\pwsh.exe" -Command '$f='"'src/app/admin/media/[mediaId]/route.ts'; "'$n=0; Get-Content -LiteralPath $f | % {$n++;'"'{0,5}: {1}' -f "'$n,$_}; $f='"'src/lib/supabase.ts'; "'$lines=Get-Content $f; for($i=96;$i -le 120;$i++){'"'{0,5}: {1}' -f "'$i,$lines[$i-1]}' in C:\Users\yerie\m3-memory
+ succeeded in 149ms:
+    1: import { NextRequest, NextResponse } from "next/server";
+    2: import { requireAdmin } from "@/lib/auth";
+    3: import { getSupabaseConfig, getPersistenceMode } from "@/lib/supabase";
+    4: 
+    5: export async function GET(
+    6:   _request: NextRequest,
+    7:   { params }: { params: Promise<{ mediaId: string }> }
+    8: ) {
+    9:   try {
+   10:     await requireAdmin();
+   11:   } catch {
+   12:     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+   13:   }
+   14: 
+   15:   const { mediaId } = await params;
+   16: 
+   17:   try {
+   18:     const config = getSupabaseConfig(true);
+   19: 
+   20:     const mediaRes = await fetch(
+   21:       `${config.url}/rest/v1/media?id=eq.${encodeURIComponent(mediaId)}&select=*`,
+   22:       {
+   23:         headers: {
+   24:           apikey: config.anonKey,
+   25:           authorization: `Bearer ${config.serviceRoleKey}`,
+   26:           "content-type": "application/json",
+   27:         },
+   28:       }
+   29:     );
+   30: 
+   31:     if (!mediaRes.ok) {
+   32:       return NextResponse.json({ error: "Media not found" }, { status: 404 });
+   33:     }
+   34: 
+   35:     const mediaRows = await mediaRes.json();
+   36:     if (!Array.isArray(mediaRows) || mediaRows.length === 0) {
+   37:       return NextResponse.json({ error: "Media not found" }, { status: 404 });
+   38:     }
+   39: 
+   40:     const media = mediaRows[0];
+   41:     const storagePath = media.storage_path;
+   42: 
+   43:     const objectRes = await fetch(
+   44:       `${config.url}/storage/v1/object/authenticated/submission-media/${encodeURIComponent(storagePath)}`,
+   45:       {
+   46:         headers: {
+   47:           authorization: `Bearer ${config.serviceRoleKey}`,
+   48:         },
+   49:       }
+   50:     );
+   51: 
+   52:     if (!objectRes.ok) {
+   53:       return NextResponse.json({ error: "File not found" }, { status: 404 });
+   54:     }
+   55: 
+   56:     const buffer = await objectRes.arrayBuffer();
+   57: 
+   58:     return new NextResponse(buffer, {
+   59:       headers: {
+   60:         "content-type": media.mime_type || "application/octet-stream",
+   61:         "content-disposition": `inline; filename="${media.file_name}"`,
+   62:         "cache-control": "private, max-age=3600",
+   63:       },
+   64:     });
+   65:   } catch (error) {
+   66:     console.error("Failed to fetch media:", error);
+   67:     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+   68:   }
+   69: }
+   96: function headers(apiKey: string, bearer = apiKey) {
+   97:   return {
+   98:     apikey: apiKey,
+   99:     authorization: `Bearer ${bearer}`,
+  100:     "content-type": "application/json"
+  101:   };
+  102: }
+  103: 
+  104: async function readJson(res: Response) {
+  105:   const text = await res.text();
+  106:   return text ? JSON.parse(text) : null;
+  107: }
+  108: 
+  109: async function request(path: string, init: RequestInit, fetchImpl: FetchLike = fetch) {
+  110:   const res = await fetchImpl(path, init);
+  111:   if (!res.ok) {
+  112:     const error = new Error(res.status === 401 ? "UNAUTHENTICATED" : `SUPABASE_REQUEST_FAILED:${res.status}`);
+  113:     (error as Error & { status?: number }).status = res.status;
+  114:     throw error;
+  115:   }
+  116:   return readJson(res);
+  117: }
+  118: 
+  119: export async function supabasePasswordLogin(email: string, password: string, fetchImpl: FetchLike = fetch) {
+  120:   const config = getSupabaseConfig(false);
+
+codex
+VERDICT: APPROVE WITH REQUIRED CHANGES
+
+1. **CRITICAL — Compensation is incomplete and unsafe under concurrent upload failure.**  
+   Evidence: the design requires deleting uploaded objects and related rows on failure, but treats failed compensation as an accepted residual risk and relies on an orphan-object sweep ([design:34-35](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:34), [design:54](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:54)). Current uploads use `Promise.all` ([actions.ts:85](C:/Users/yerie/m3-memory/src/app/remember/actions.ts:85)); if one upload rejects, successful object paths may never be returned to the caller, while other requests can still finish. The proposed sweep only addresses objects without media rows, not residual media rows, capability rows, submissions, or people left by failed deletion. Current database compensation stops at the first failed request ([supabase.ts:410](C:/Users/yerie/m3-memory/src/lib/supabase.ts:410)).  
+   Required change: specify sequential uploads or `Promise.allSettled` with every generated key recorded before upload. Compensation must attempt every cleanup independently, record failures without identifiers or secrets, and be idempotent. The sweep must reconcile both directions: orphan objects and media rows whose objects/submissions are missing. Failed submission/person/capability cleanup needs a separate age-guarded database reconciliation or operational retry queue. Do not call this risk fully handled merely because an object sweep exists.
+
+2. **HIGH — Magic-byte checks alone do not establish that content is a safe image.**  
+   Evidence: current validation trusts `file.type` ([db.ts:539-551](C:/Users/yerie/m3-memory/src/lib/db.ts:539)); the design adds only short signatures for JPEG, PNG, and WebP ([design:27](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:27), [design:70](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:70)). An attacker can prepend a valid signature, construct malformed containers, append arbitrary HTML/script, or create a valid image/polyglot. Signature checks also do not safely establish dimensions.  
+   Required change: treat signatures as preliminary format detection, not sanitization. Parse the complete container with strict bounds and reject malformed/truncated files, impossible chunk lengths, trailing content where practical, excessive dimensions, excessive decoded pixels, and unsupported animated/multiframe forms. The robust boundary is full decode followed by fresh re-encoding.
+
+3. **HIGH — Serving controls are mandatory even after validation.**  
+   Evidence: the existing admin route serves the database MIME type inline and lacks `X-Content-Type-Options` ([route.ts:58-63](C:/Users/yerie/m3-memory/src/app/admin/media/%5BmediaId%5D/route.ts:58)). Current upload does not send the supplied `contentType` at all ([supabase.ts:300-310](C:/Users/yerie/m3-memory/src/lib/supabase.ts:300)).  
+   Required change: every delivery path, including signed/direct bucket URLs, must return the server-verified `Content-Type`, `X-Content-Type-Options: nosniff`, and preferably `Content-Disposition: attachment`. If inline viewing is required, use a fixed sanitized filename, restrictive `Content-Security-Policy: default-src 'none'; sandbox`, and an isolated origin where feasible. Never derive response type from stored client metadata. Set storage object metadata to the verified type during upload.
+
+4. **HIGH — “Reject JPEGs with GPS” is not a reliable privacy guarantee.**  
+   Evidence: the design acknowledges that Option B can miss metadata ([design:77](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:77)). A conventional EXIF GPS IFD detector can miss malformed or duplicated APP1 segments, XMP GPS fields, vendor MakerNote location data, embedded thumbnails, and nonstandard byte ordering. Location or identifying data can also appear in PNG `tEXt`/`zTXt`/`iTXt`/eXIf chunks and WebP EXIF/XMP chunks.  
+   Required change: Option B must be described as best-effort rejection, not metadata removal or a privacy guarantee. Option A must fully decode pixels, enforce encoded-byte and decoded-pixel limits before/during decoding, discard all source metadata/profiles/thumbnails/comments, and encode a fresh JPEG/PNG/WebP with only explicitly generated metadata. Verify the output by parsing it again. Decide how animation, orientation, color profiles, transparency, and decode failures are handled.
+
+5. **HIGH — Bucket privacy cannot be established from this repository.**  
+   Evidence: `submission-media` is absent from the schema, which the design correctly notes ([design:19](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:19)). The repository proves only that table RLS is enabled and media reads are admin-only ([schema.sql:132-146](C:/Users/yerie/m3-memory/supabase/schema.sql:132), [schema.sql:214-221](C:/Users/yerie/m3-memory/supabase/schema.sql:214)).  
+   Required change: before implementation/launch, verify in the deployed Supabase project that the bucket is private; public URLs fail; anon and ordinary authenticated users cannot select, upload, update, move, copy, or delete relevant `storage.objects`; no broad policy covers the bucket; signed URLs are short-lived; and service-role access remains server-only. Record project/environment, verifier, date, and results. The repo cannot prove dashboard configuration, deployed migrations, inherited storage policies, leaked signed URLs, CDN caching, or service-key handling outside this code.
+
+6. **MEDIUM — Upload-inside-creation is sound only with strict request-local binding.**  
+   Evidence: the action creates the submission itself before processing media and does not accept a submission ID from the client ([actions.ts:20-53](C:/Users/yerie/m3-memory/src/app/remember/actions.ts:20), [actions.ts:72-104](C:/Users/yerie/m3-memory/src/app/remember/actions.ts:72)). The design similarly derives one SID inside the creation request ([design:42-52](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:42)). Under that constraint, no path uploads to a pre-existing submission the contributor does not own.  
+   Required change: make the helper accept a server-created submission context, not an arbitrary client-derived SID. Validate the canonical UUID and require every media row’s `submission_id` and object prefix to match the same request-local SID. Do not expose the service-role helper through another action/route. Add the cross-submission negative test already proposed at [design:89](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:89).
+
+7. **MEDIUM — Path safety improves materially, but overwrite behavior needs an explicit contract and test.**  
+   Evidence: current keys retain a sanitized client filename ([supabase.ts:300-345](C:/Users/yerie/m3-memory/src/lib/supabase.ts:300)); the proposed UUID plus verified extension removes traversal/name ambiguity ([design:51](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:51), [design:73](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:73)). Current upload sends a normal `POST` and no upsert directive ([supabase.ts:306-310](C:/Users/yerie/m3-memory/src/lib/supabase.ts:306)); therefore upsert is not enabled in the current helper, but this is implicit rather than asserted.  
+   Required change: keep client names out of object keys, validate SID format, use a fixed bucket/prefix, and length-cap cleaned display names. Explicitly document the storage API’s create-only semantics and test that uploading twice to an identical forced key returns conflict and preserves the first object. Treat any successful overwrite response as a failure.
+
+8. **MEDIUM — Abuse mitigation options are incomplete; an explicit launch control is required.**  
+   Evidence: the design leaves unauthenticated volume abuse open ([design:37](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:37), [design:78](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:78)). Client restrictions are advisory only ([MediaPicker.tsx:19-20](C:/Users/yerie/m3-memory/src/app/remember/MediaPicker.tsx:19), [MediaPicker.tsx:44-53](C:/Users/yerie/m3-memory/src/app/remember/MediaPicker.tsx:44)). Missing options include edge request/body-size enforcement, application or database token buckets, global daily storage budgets, CAPTCHA/challenge escalation, and operational alerts/circuit breakers.  
+   Required change: the smallest reasonable production option is an edge-enforced per-IP limit on the creation endpoint, combined with a hard request-body limit and the proposed 20 MB aggregate file limit. Add a conservative global rate/storage alert. IP limiting is imperfect behind NAT/VPNs but is substantially smaller than introducing a new application capability system. Prototype acceptance must be explicitly environment-limited and must not silently carry into production.
+
+9. **MEDIUM — Decode and resource-exhaustion threats need explicit controls.**  
+   Evidence: the design proposes 8 MB/file, 20 MB/request, and 8000-pixel dimensions ([design:69-72](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:69)), but dimensions alone do not cap total decoded pixels, frame count, CPU, or memory. Current code reads all files into memory and uploads them concurrently ([actions.ts:85-102](C:/Users/yerie/m3-memory/src/app/remember/actions.ts:85)).  
+   Required change: cap width × height, frame count, decode time, decoder memory/concurrency, and total request body at the platform boundary. Avoid holding five full encoded and decoded images concurrently. Reject malformed chunk lengths and decompression bombs.
+
+10. **MEDIUM — Metadata and response filenames need separate sanitization rules.**  
+    Evidence: the design limits stored names and removes control characters ([design:29](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:29)), while the existing response interpolates `media.file_name` into `Content-Disposition` ([route.ts:61](C:/Users/yerie/m3-memory/src/app/admin/media/%5BmediaId%5D/route.ts:61)).  
+    Required change: normalize and cap the stored display value, but independently generate a safe response filename containing no CR/LF, quotes, slashes, bidi controls, or ambiguous extension. Prefer a server-generated filename for delivery.
+
+11. **MEDIUM — Missing operational threats.**  
+    Evidence: the current/design scope focuses on file format, paths, and orphan cleanup.  
+    Required change: add requirements for malware/content moderation expectations, retention/deletion policy, backup deletion behavior, administrator download risk, logging without personal filenames/content, signed-URL leakage and referrer exposure, cache invalidation, sweep authorization and auditability, object integrity verification, and handling a submission that succeeds but the final redirect/cookie delivery fails. Clarify that “private unless Media Consent” in the UI ([MediaPicker.tsx:53](C:/Users/yerie/m3-memory/src/app/remember/MediaPicker.tsx:53)) does not mean consent makes the bucket public.
+
+12. **LOW — RLS and grant boundary is correctly designed.**  
+    Evidence: the design adds no policy or grant and uses the service role ([design:60-65](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:60)). Current schema revokes media access, enables RLS, and grants only admin-authenticated SELECT through policy ([schema.sql:136-145](C:/Users/yerie/m3-memory/supabase/schema.sql:136), [schema.sql:214-221](C:/Users/yerie/m3-memory/supabase/schema.sql:214)).  
+    Required change: retain the proposed test asserting no policy/grant diff. Review the new helper to ensure fixed columns, verified SID/key binding, and no caller-supplied bearer token.
+
+## Decisions that need the user
+
+1. Approve robust full decode/re-encoding with a maintained image library, or explicitly accept that Option B cannot guarantee removal/detection of location metadata.
+2. Decide whether inline admin viewing is necessary; otherwise require attachment delivery.
+3. Choose the production edge/WAF provider and concrete rate/body-size limits.
+4. Choose the scheduler and ownership/alerting for reconciliation jobs.
+5. Set retention periods for orphan objects, failed creations, uploaded originals, logs, backups, and signed URLs.
+6. Decide whether animated images are rejected or normalized to a single frame.
+7. Decide whether production launch is blocked until deployed bucket-policy evidence is recorded. Recommendation: yes.
+
+## Verified-correct items
+
+- Keeping uploads inside the original creation action avoids a second contributor write surface.
+- The current failure is real: contributor code calls an admin-token-required insert without a token ([db.ts:554-557](C:/Users/yerie/m3-memory/src/lib/db.ts:554)).
+- The proposed UUID-plus-verified-extension key is safer than the current client-name-derived key.
+- Current storage upload does not enable upsert explicitly.
+- Count and per-file checks exist server-side today, although they run too late and trust client MIME.
+- The proposed pre-write validation and aggregate byte limit are correct.
+- The design correctly keeps media table RLS admin-read-only and proposes no new grant or policy.
+- The repository correctly does not claim it can prove deployed bucket privacy.
+- No files were modified.
+tokens used
+34,144
+VERDICT: APPROVE WITH REQUIRED CHANGES
+
+1. **CRITICAL — Compensation is incomplete and unsafe under concurrent upload failure.**  
+   Evidence: the design requires deleting uploaded objects and related rows on failure, but treats failed compensation as an accepted residual risk and relies on an orphan-object sweep ([design:34-35](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:34), [design:54](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:54)). Current uploads use `Promise.all` ([actions.ts:85](C:/Users/yerie/m3-memory/src/app/remember/actions.ts:85)); if one upload rejects, successful object paths may never be returned to the caller, while other requests can still finish. The proposed sweep only addresses objects without media rows, not residual media rows, capability rows, submissions, or people left by failed deletion. Current database compensation stops at the first failed request ([supabase.ts:410](C:/Users/yerie/m3-memory/src/lib/supabase.ts:410)).  
+   Required change: specify sequential uploads or `Promise.allSettled` with every generated key recorded before upload. Compensation must attempt every cleanup independently, record failures without identifiers or secrets, and be idempotent. The sweep must reconcile both directions: orphan objects and media rows whose objects/submissions are missing. Failed submission/person/capability cleanup needs a separate age-guarded database reconciliation or operational retry queue. Do not call this risk fully handled merely because an object sweep exists.
+
+2. **HIGH — Magic-byte checks alone do not establish that content is a safe image.**  
+   Evidence: current validation trusts `file.type` ([db.ts:539-551](C:/Users/yerie/m3-memory/src/lib/db.ts:539)); the design adds only short signatures for JPEG, PNG, and WebP ([design:27](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:27), [design:70](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:70)). An attacker can prepend a valid signature, construct malformed containers, append arbitrary HTML/script, or create a valid image/polyglot. Signature checks also do not safely establish dimensions.  
+   Required change: treat signatures as preliminary format detection, not sanitization. Parse the complete container with strict bounds and reject malformed/truncated files, impossible chunk lengths, trailing content where practical, excessive dimensions, excessive decoded pixels, and unsupported animated/multiframe forms. The robust boundary is full decode followed by fresh re-encoding.
+
+3. **HIGH — Serving controls are mandatory even after validation.**  
+   Evidence: the existing admin route serves the database MIME type inline and lacks `X-Content-Type-Options` ([route.ts:58-63](C:/Users/yerie/m3-memory/src/app/admin/media/%5BmediaId%5D/route.ts:58)). Current upload does not send the supplied `contentType` at all ([supabase.ts:300-310](C:/Users/yerie/m3-memory/src/lib/supabase.ts:300)).  
+   Required change: every delivery path, including signed/direct bucket URLs, must return the server-verified `Content-Type`, `X-Content-Type-Options: nosniff`, and preferably `Content-Disposition: attachment`. If inline viewing is required, use a fixed sanitized filename, restrictive `Content-Security-Policy: default-src 'none'; sandbox`, and an isolated origin where feasible. Never derive response type from stored client metadata. Set storage object metadata to the verified type during upload.
+
+4. **HIGH — “Reject JPEGs with GPS” is not a reliable privacy guarantee.**  
+   Evidence: the design acknowledges that Option B can miss metadata ([design:77](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:77)). A conventional EXIF GPS IFD detector can miss malformed or duplicated APP1 segments, XMP GPS fields, vendor MakerNote location data, embedded thumbnails, and nonstandard byte ordering. Location or identifying data can also appear in PNG `tEXt`/`zTXt`/`iTXt`/eXIf chunks and WebP EXIF/XMP chunks.  
+   Required change: Option B must be described as best-effort rejection, not metadata removal or a privacy guarantee. Option A must fully decode pixels, enforce encoded-byte and decoded-pixel limits before/during decoding, discard all source metadata/profiles/thumbnails/comments, and encode a fresh JPEG/PNG/WebP with only explicitly generated metadata. Verify the output by parsing it again. Decide how animation, orientation, color profiles, transparency, and decode failures are handled.
+
+5. **HIGH — Bucket privacy cannot be established from this repository.**  
+   Evidence: `submission-media` is absent from the schema, which the design correctly notes ([design:19](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:19)). The repository proves only that table RLS is enabled and media reads are admin-only ([schema.sql:132-146](C:/Users/yerie/m3-memory/supabase/schema.sql:132), [schema.sql:214-221](C:/Users/yerie/m3-memory/supabase/schema.sql:214)).  
+   Required change: before implementation/launch, verify in the deployed Supabase project that the bucket is private; public URLs fail; anon and ordinary authenticated users cannot select, upload, update, move, copy, or delete relevant `storage.objects`; no broad policy covers the bucket; signed URLs are short-lived; and service-role access remains server-only. Record project/environment, verifier, date, and results. The repo cannot prove dashboard configuration, deployed migrations, inherited storage policies, leaked signed URLs, CDN caching, or service-key handling outside this code.
+
+6. **MEDIUM — Upload-inside-creation is sound only with strict request-local binding.**  
+   Evidence: the action creates the submission itself before processing media and does not accept a submission ID from the client ([actions.ts:20-53](C:/Users/yerie/m3-memory/src/app/remember/actions.ts:20), [actions.ts:72-104](C:/Users/yerie/m3-memory/src/app/remember/actions.ts:72)). The design similarly derives one SID inside the creation request ([design:42-52](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:42)). Under that constraint, no path uploads to a pre-existing submission the contributor does not own.  
+   Required change: make the helper accept a server-created submission context, not an arbitrary client-derived SID. Validate the canonical UUID and require every media row’s `submission_id` and object prefix to match the same request-local SID. Do not expose the service-role helper through another action/route. Add the cross-submission negative test already proposed at [design:89](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:89).
+
+7. **MEDIUM — Path safety improves materially, but overwrite behavior needs an explicit contract and test.**  
+   Evidence: current keys retain a sanitized client filename ([supabase.ts:300-345](C:/Users/yerie/m3-memory/src/lib/supabase.ts:300)); the proposed UUID plus verified extension removes traversal/name ambiguity ([design:51](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:51), [design:73](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:73)). Current upload sends a normal `POST` and no upsert directive ([supabase.ts:306-310](C:/Users/yerie/m3-memory/src/lib/supabase.ts:306)); therefore upsert is not enabled in the current helper, but this is implicit rather than asserted.  
+   Required change: keep client names out of object keys, validate SID format, use a fixed bucket/prefix, and length-cap cleaned display names. Explicitly document the storage API’s create-only semantics and test that uploading twice to an identical forced key returns conflict and preserves the first object. Treat any successful overwrite response as a failure.
+
+8. **MEDIUM — Abuse mitigation options are incomplete; an explicit launch control is required.**  
+   Evidence: the design leaves unauthenticated volume abuse open ([design:37](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:37), [design:78](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:78)). Client restrictions are advisory only ([MediaPicker.tsx:19-20](C:/Users/yerie/m3-memory/src/app/remember/MediaPicker.tsx:19), [MediaPicker.tsx:44-53](C:/Users/yerie/m3-memory/src/app/remember/MediaPicker.tsx:44)). Missing options include edge request/body-size enforcement, application or database token buckets, global daily storage budgets, CAPTCHA/challenge escalation, and operational alerts/circuit breakers.  
+   Required change: the smallest reasonable production option is an edge-enforced per-IP limit on the creation endpoint, combined with a hard request-body limit and the proposed 20 MB aggregate file limit. Add a conservative global rate/storage alert. IP limiting is imperfect behind NAT/VPNs but is substantially smaller than introducing a new application capability system. Prototype acceptance must be explicitly environment-limited and must not silently carry into production.
+
+9. **MEDIUM — Decode and resource-exhaustion threats need explicit controls.**  
+   Evidence: the design proposes 8 MB/file, 20 MB/request, and 8000-pixel dimensions ([design:69-72](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:69)), but dimensions alone do not cap total decoded pixels, frame count, CPU, or memory. Current code reads all files into memory and uploads them concurrently ([actions.ts:85-102](C:/Users/yerie/m3-memory/src/app/remember/actions.ts:85)).  
+   Required change: cap width × height, frame count, decode time, decoder memory/concurrency, and total request body at the platform boundary. Avoid holding five full encoded and decoded images concurrently. Reject malformed chunk lengths and decompression bombs.
+
+10. **MEDIUM — Metadata and response filenames need separate sanitization rules.**  
+    Evidence: the design limits stored names and removes control characters ([design:29](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:29)), while the existing response interpolates `media.file_name` into `Content-Disposition` ([route.ts:61](C:/Users/yerie/m3-memory/src/app/admin/media/%5BmediaId%5D/route.ts:61)).  
+    Required change: normalize and cap the stored display value, but independently generate a safe response filename containing no CR/LF, quotes, slashes, bidi controls, or ambiguous extension. Prefer a server-generated filename for delivery.
+
+11. **MEDIUM — Missing operational threats.**  
+    Evidence: the current/design scope focuses on file format, paths, and orphan cleanup.  
+    Required change: add requirements for malware/content moderation expectations, retention/deletion policy, backup deletion behavior, administrator download risk, logging without personal filenames/content, signed-URL leakage and referrer exposure, cache invalidation, sweep authorization and auditability, object integrity verification, and handling a submission that succeeds but the final redirect/cookie delivery fails. Clarify that “private unless Media Consent” in the UI ([MediaPicker.tsx:53](C:/Users/yerie/m3-memory/src/app/remember/MediaPicker.tsx:53)) does not mean consent makes the bucket public.
+
+12. **LOW — RLS and grant boundary is correctly designed.**  
+    Evidence: the design adds no policy or grant and uses the service role ([design:60-65](C:/Users/yerie/m3-memory/docs/MUSEUM_CONTRIBUTOR_MEDIA_DESIGN.md:60)). Current schema revokes media access, enables RLS, and grants only admin-authenticated SELECT through policy ([schema.sql:136-145](C:/Users/yerie/m3-memory/supabase/schema.sql:136), [schema.sql:214-221](C:/Users/yerie/m3-memory/supabase/schema.sql:214)).  
+    Required change: retain the proposed test asserting no policy/grant diff. Review the new helper to ensure fixed columns, verified SID/key binding, and no caller-supplied bearer token.
+
+## Decisions that need the user
+
+1. Approve robust full decode/re-encoding with a maintained image library, or explicitly accept that Option B cannot guarantee removal/detection of location metadata.
+2. Decide whether inline admin viewing is necessary; otherwise require attachment delivery.
+3. Choose the production edge/WAF provider and concrete rate/body-size limits.
+4. Choose the scheduler and ownership/alerting for reconciliation jobs.
+5. Set retention periods for orphan objects, failed creations, uploaded originals, logs, backups, and signed URLs.
+6. Decide whether animated images are rejected or normalized to a single frame.
+7. Decide whether production launch is blocked until deployed bucket-policy evidence is recorded. Recommendation: yes.
+
+## Verified-correct items
+
+- Keeping uploads inside the original creation action avoids a second contributor write surface.
+- The current failure is real: contributor code calls an admin-token-required insert without a token ([db.ts:554-557](C:/Users/yerie/m3-memory/src/lib/db.ts:554)).
+- The proposed UUID-plus-verified-extension key is safer than the current client-name-derived key.
+- Current storage upload does not enable upsert explicitly.
+- Count and per-file checks exist server-side today, although they run too late and trust client MIME.
+- The proposed pre-write validation and aggregate byte limit are correct.
+- The design correctly keeps media table RLS admin-read-only and proposes no new grant or policy.
+- The repository correctly does not claim it can prove deployed bucket privacy.
+- No files were modified.
+DONE=0

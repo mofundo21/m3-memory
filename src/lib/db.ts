@@ -17,6 +17,10 @@ import {
   insertSupabaseMediaRows,
   getSupabaseSubmissionMedia,
   updateSupabaseSubmissionPreferences,
+  consumeSupabaseCapability,
+  deleteSupabaseSubmissionRecords,
+  insertSupabaseCapability,
+  saveSupabaseContributorPreferences,
   type NormalizedReview,
   type NormalizedSubmission
 } from "./supabase";
@@ -108,6 +112,16 @@ function getDb() {
       approved_at TEXT,
       created_at TEXT NOT NULL,
       FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE
+    );
+  `);
+
+  // Contributor capabilities: one row per submission with an open contributor window. No raw token is stored.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS contributor_capabilities (
+      submission_id TEXT PRIMARY KEY,
+      token_hash TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
     );
   `);
 
@@ -254,11 +268,17 @@ function requireSupabaseAdminToken(adminToken?: string | null) {
   return adminToken;
 }
 
-export async function createSubmission(input: SubmissionInput) {
-  const record = normalizeSubmission(input);
+/** Normalize once. The caller keeps the record, so the same SID and person id can key a capability and compensation. */
+export function normalizeSubmissionRecord(input: SubmissionInput): NormalizedSubmission {
+  return normalizeSubmission(input);
+}
+
+/** Persist an already-normalized record. Compensation is the caller's job, using the record's ids. */
+export async function persistNormalizedSubmission(record: NormalizedSubmission) {
 
   if (getPersistenceMode() === "supabase") {
-    return createSupabaseSubmission(record);
+    const id = await createSupabaseSubmission(record);
+    return { id, personId: record.personId };
   }
 
   const db = getDb();
@@ -294,7 +314,11 @@ export async function createSubmission(input: SubmissionInput) {
     record.createdAt
   );
 
-  return record.id;
+  return { id: record.id, personId: record.personId };
+}
+
+export async function createSubmission(input: SubmissionInput) {
+  return persistNormalizedSubmission(normalizeSubmission(input));
 }
 
 function mapSupabaseListItem(item: any) {
@@ -605,4 +629,52 @@ export async function updateSubmissionPreferences(submissionId: string, input: A
     updatedAt,
     submissionId
   );
+}
+
+// ---- Contributor capability store (dispatches by persistence mode). Used only by src/lib/contributorCapability.ts. ----
+
+export async function storeContributorCapability(submissionId: string, tokenHash: string, expiresAt: string) {
+  if (getPersistenceMode() === "supabase") {
+    await insertSupabaseCapability(submissionId, tokenHash, expiresAt);
+    return;
+  }
+  getDb().prepare("INSERT INTO contributor_capabilities (submission_id, token_hash, expires_at) VALUES (?, ?, ?)").run(submissionId, tokenHash, expiresAt);
+}
+
+/** Atomic consume. True only if exactly one unexpired row matched and was deleted. */
+export async function consumeContributorCapability(submissionId: string, tokenHash: string, nowIso: string) {
+  if (getPersistenceMode() === "supabase") {
+    return consumeSupabaseCapability(submissionId, tokenHash, nowIso);
+  }
+  const rows = getDb()
+    .prepare("DELETE FROM contributor_capabilities WHERE submission_id = ? AND token_hash = ? AND expires_at > ? RETURNING submission_id")
+    .all(submissionId, tokenHash, nowIso);
+  return rows.length === 1 && (rows[0] as { submission_id: string }).submission_id === submissionId;
+}
+
+/** Guarded save of the four contributor-owned fields. True only if exactly the one UNREVIEWED row changed. */
+export async function saveContributorPreferences(
+  submissionId: string,
+  fields: { attributionPreference: string; preferredAttribution: string | null; bookNote: string | null; finalNotes: string | null }
+) {
+  if (getPersistenceMode() === "supabase") {
+    return saveSupabaseContributorPreferences(submissionId, fields);
+  }
+  const result = getDb()
+    .prepare(`UPDATE submissions SET attribution_preference = ?, preferred_attribution = ?, book_note = ?, final_notes = ?, updated_at = ?
+              WHERE id = ? AND status = 'UNREVIEWED'`)
+    .run(fields.attributionPreference, fields.preferredAttribution, fields.bookNote, fields.finalNotes, now(), submissionId);
+  return Number(result.changes) === 1;
+}
+
+/** Compensation for a failed creation. Best effort; the caller logs a category, never the ids. */
+export async function deleteSubmissionRecords(submissionId: string, personId: string) {
+  if (getPersistenceMode() === "supabase") {
+    await deleteSupabaseSubmissionRecords(submissionId, personId);
+    return;
+  }
+  const db = getDb();
+  db.prepare("DELETE FROM contributor_capabilities WHERE submission_id = ?").run(submissionId);
+  db.prepare("DELETE FROM submissions WHERE id = ?").run(submissionId);
+  db.prepare("DELETE FROM persons WHERE id = ? AND NOT EXISTS (SELECT 1 FROM submissions WHERE submitter_person_id = persons.id)").run(personId);
 }

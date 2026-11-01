@@ -46,6 +46,42 @@ export default function WriteMemoryPage() {
             <div className="error-note">{error}</div>
           )}
 
+          <fieldset className="field" style={{ border: 'none', padding: 0, margin: '0 0 24px' }}>
+            <legend className="kicker" style={{ marginBottom: '8px' }}>About you</legend>
+            <div className="grid">
+              <div className="field">
+                <label htmlFor="submitterName">
+                  <span className="kicker">Optional</span>
+                  Your name
+                </label>
+                <input
+                  type="text"
+                  id="submitterName"
+                  name="submitterName"
+                  value={state.submitterName}
+                  onChange={(e) => updateField('submitterName', e.target.value)}
+                  placeholder="Leave blank for Anonymous"
+                  autoComplete="name"
+                  className="field-input"
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="contact">Your email</label>
+                <input
+                  type="email"
+                  id="contact"
+                  name="contact"
+                  value={state.contact}
+                  onChange={(e) => updateField('contact', e.target.value)}
+                  placeholder="your@email.com"
+                  autoComplete="email"
+                  className="field-input"
+                />
+              </div>
+            </div>
+          </fieldset>
+
           <div className="field main-memory-field">
             <label htmlFor="memoryText">
               <span className="kicker">Required</span>

@@ -10,9 +10,9 @@ export default function FinalMemoryContent() {
   const submissionId = searchParams.get("submissionId");
   const { state } = useMemoryWizard();
 
+  // The name and email were captured on the About you step and are already stored with the submission.
+  // This step only handles attribution and notes.
   const [formData, setFormData] = useState({
-    submitterName: state.submitterName || "",
-    contact: state.contact || "",
     bookNote: state.bookNote || "",
     attributionPreference: state.attributionPreference || "anonymous",
     preferredAttribution: "",
@@ -70,35 +70,6 @@ export default function FinalMemoryContent() {
           {error && (
             <div className="error-note">{error}</div>
           )}
-
-          <div className="grid">
-            <div className="field">
-              <label htmlFor="submitterName">
-                <span className="kicker">Optional</span>
-                Your name
-              </label>
-              <input
-                type="text"
-                id="submitterName"
-                value={formData.submitterName}
-                onChange={(e) => setFormData({ ...formData, submitterName: e.target.value })}
-                placeholder="Leave blank for Anonymous"
-                className="field-input"
-              />
-            </div>
-
-            <div className="field">
-              <label htmlFor="contact">Your email</label>
-              <input
-                type="email"
-                id="contact"
-                value={formData.contact}
-                onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                placeholder="your@email.com"
-                className="field-input"
-              />
-            </div>
-          </div>
 
           <div className="field" style={{ marginTop: '24px' }}>
             <label htmlFor="bookNote">
@@ -189,7 +160,7 @@ export default function FinalMemoryContent() {
               <p>
                 {formData.attributionPreference === "custom"
                   ? formData.preferredAttribution || "(not yet specified)"
-                  : formData.submitterName || "(will use Anonymous)"}
+                  : state.submitterName || "(will use Anonymous)"}
               </p>
             </div>
           </div>
